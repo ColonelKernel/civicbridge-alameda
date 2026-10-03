@@ -48,14 +48,6 @@ export function classify(evidence: Evidence[], sol: Solicitation, today: ISODate
     (e) => (e.status === "check" || e.status === "unknown") && e.ruleId !== "availability",
   );
 
-  let fitScore = 0;
-  if (tradeFit?.status === "met") fitScore += tradeFit.confidence === "confirmed" ? 40 : 25;
-  if (evidence.some((e) => e.ruleId === "capabilityMatch" && e.status === "met")) fitScore += 15;
-  if (size?.status === "met") fitScore += 20;
-  if (evidence.some((e) => e.ruleId === "location" && e.status === "met")) fitScore += 10;
-  fitScore += evidence.filter((e) => (e.ruleId === "license" || e.ruleId === "certRequired" || e.ruleId === "certPreferred") && e.status === "met").length * 5;
-  fitScore -= evidence.filter((e) => e.status === "missing").length * 15;
-  fitScore -= Math.min(10, evidence.filter((e) => e.status === "check").length * 2);
 
   const reasons = buildReasons(evidence, fit);
 
@@ -65,7 +57,6 @@ export function classify(evidence: Evidence[], sol: Solicitation, today: ISODate
     blockers,
     verify,
     reasons,
-    fitScore,
     daysUntilDue: daysBetween(today, sol.dates.submissionDue.date),
   };
 }

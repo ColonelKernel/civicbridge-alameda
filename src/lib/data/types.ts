@@ -370,7 +370,11 @@ export type RuleId =
   | "dirRegistration"
   | "mandatoryMeeting"
   | "statedStaffing"
-  | "listingOnly";
+  | "listingOnly"
+  // Derived ids used only inside FitScoreResult (never emitted by runRules).
+  | "lexicalSimilarity"
+  | "adminBurden"
+  | "deadline";
 
 export interface SourceRef {
   /** JSON path into the solicitation, or "standard" for general County steps. */
@@ -405,11 +409,63 @@ export interface Classification {
   blockers: Evidence[];
   verify: Evidence[];
   reasons: string[];
-  fitScore: number;
   daysUntilDue: number;
 }
 
 export type AdminBurden = "low" | "medium" | "high";
+
+// ---------------------------------------------------------------------------
+// Bid Effort Fit (see src/lib/engine/fit-score.ts)
+// ---------------------------------------------------------------------------
+
+export type FitRecommendation = "strong" | "investigate" | "verify" | "blocked";
+export type FitConfidence = "high" | "medium" | "low";
+
+export interface FitScoreComponents {
+  /** Trade, capabilities, keywords, lexical similarity. Max 35. */
+  scope: number;
+  /** Licenses, certifications, insurance, staffing, experience. Max 35. */
+  readiness: number;
+  /** Contract range and paperwork effort. Max 15. */
+  commercial: number;
+  /** Location rules, stated preference programs, time left. Max 15. */
+  localAndTiming: number;
+}
+
+/** Audit snapshot of what went into a score. Client-side only; carries no vendor free text. */
+export interface FitScoreInputs {
+  today: string;
+  listingOnly: boolean;
+  daysUntilDue: number;
+  adminBurden: AdminBurden;
+  fit: Fit;
+  evidence: { id: string; ruleId: RuleId; status: EvidenceStatus; confidence: Confidence; points?: number }[];
+  similarity: { cosine: number; points: number; solicitationTokens: number; vendorTokens: number; sharedTerms: string[] };
+  profile: {
+    primaryCategorySource: BusinessProfile["primaryCategorySource"];
+    licenses: "declared" | "unknown";
+    certifications: "declared" | "unknown";
+    insurance: "declared" | "unknown";
+    typicalContractSize: "declared" | "unknown";
+    yearsInBusiness: boolean;
+    employeeCount: boolean;
+  };
+}
+
+export interface FitScoreResult {
+  status: "scored" | "blocked";
+  /** 0-100, present only when status is "scored". */
+  score?: number;
+  recommendation: FitRecommendation;
+  confidence: FitConfidence;
+  components: FitScoreComponents;
+  positives: Evidence[];
+  risks: Evidence[];
+  unknowns: Evidence[];
+  blockers: Evidence[];
+  inputs: FitScoreInputs;
+  scoringVersion: string;
+}
 
 export interface MatchResult {
   solicitation: Solicitation;
@@ -417,6 +473,7 @@ export interface MatchResult {
   classification: Classification;
   adminBurden: AdminBurden;
   adminBurdenReasons: string[];
+  fitScore: FitScoreResult;
 }
 
 export interface SolicitationSource {

@@ -309,7 +309,7 @@ export const license: Rule = ({ sol, profile }) => {
     const wantsC = /^C-\d+$/.test(normalizeLicenseCode(req.code));
     const haveB = profile.licenses.some((l) => normalizeLicenseCode(l.code) === "B");
     if (wantsC && haveB) {
-      return { ...base, status: "check", confidence: "confirmed", label: `Requires ${req.label}; you listed a Class B`, detail: "A Class B general building license covers projects involving two or more unrelated trades, not single-trade work. Confirm with the CSLB or the contact whether your B qualifies here.", action: "Ask the procurement contact in the Q&A tab whether a Class B is acceptable." };
+      return { ...base, status: "check", confidence: "confirmed", label: `Requires ${req.label}; you listed a Class B`, detail: "A Class B general building license covers projects involving two or more unrelated trades, not single-trade work. Confirm with the CSLB or the contact whether your B is accepted here.", action: "Ask the procurement contact in the Q&A tab whether a Class B is acceptable." };
     }
     return { ...base, status: "missing", confidence: "confirmed", label: `Requires ${req.label}, which you haven't listed`, detail: `The solicitation states this license is required. ${glossaryFor(key)?.action ?? "If you hold it, add it to your profile; otherwise consider subcontracting to a licensed prime."}` };
   });
@@ -374,7 +374,7 @@ export const experience: Rule = ({ sol, profile }) => {
   if (profile.yearsInBusiness >= req.years) {
     return [{ ...base, status: "met", confidence: "inferred", label: `${req.years}+ years required; you have ${profile.yearsInBusiness}`, detail: `The County counts years "regularly and continuously engaged" in this specific kind of work (${req.description}), not just years in business. Show it in the Minimum Qualifications table.` }];
   }
-  return [{ ...base, status: "missing", confidence: "confirmed", label: `Requires ${req.years} years; you listed ${profile.yearsInBusiness}`, detail: `The solicitation requires ${req.years} years of ${req.description}. Consider subcontracting to a prime that qualifies.` }];
+  return [{ ...base, status: "missing", confidence: "confirmed", label: `Requires ${req.years} years; you listed ${profile.yearsInBusiness}`, detail: `The solicitation requires ${req.years} years of ${req.description}. Consider subcontracting to a prime that meets it.` }];
 };
 
 export const bonding: Rule = ({ sol }) => {

@@ -4,6 +4,7 @@
  */
 import type { Category, Evidence, Fit, MatchResult } from "@/lib/data/types";
 import { glossaryFor, type GlossaryEntry } from "@/lib/data/glossary";
+import { rankScore } from "./fit-score";
 
 export type GapBucket = "missing" | "verify" | "tell-us";
 
@@ -29,7 +30,7 @@ export interface DashboardSections {
 }
 
 const byScoreThenDate = (a: MatchResult, b: MatchResult) =>
-  b.classification.fitScore - a.classification.fitScore || a.classification.daysUntilDue - b.classification.daysUntilDue;
+  rankScore(b) - rankScore(a) || a.classification.daysUntilDue - b.classification.daysUntilDue || a.solicitation.id.localeCompare(b.solicitation.id);
 
 const byDate = (a: MatchResult, b: MatchResult) => a.classification.daysUntilDue - b.classification.daysUntilDue;
 
