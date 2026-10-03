@@ -10,7 +10,7 @@ import { SourceQuote } from "./SourceQuote";
 
 const ORIGIN: Record<ChecklistItem["origin"], { label: string; cls: string }> = {
   solicitation: { label: "from the solicitation", cls: "bg-slate-soft text-slate" },
-  standard: { label: "general County step", cls: "bg-blue-soft text-blue" },
+  standard: { label: "general step", cls: "bg-blue-soft text-blue" },
   "glossary-advice": { label: "our suggestion", cls: "bg-amber-soft text-amber" },
 };
 

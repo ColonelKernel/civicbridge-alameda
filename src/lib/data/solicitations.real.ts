@@ -27,6 +27,10 @@ const sleb = (quoteExtra = "") => ({
   code: "SLEB",
   label: "Alameda County SLEB certification (preference points; not required to bid)",
   required: false,
+  mechanism: "preference" as const,
+  percent: 10,
+  goalPercent: 20,
+  exceptionAllowed: true,
   quote:
     "If a Bidder is certified by the County as either a small and local or an emerging and local business (SLEB), the County will provide up to 5% bid preference for procurements over $25,000" +
     quoteExtra,
@@ -418,6 +422,10 @@ ${GSA_BOILERPLATE}`,
         },
         {
           code: "SLEB",
+          mechanism: "preference" as const,
+          percent: 10,
+          goalPercent: 20,
+          exceptionAllowed: true,
           label: "SLEB preference points",
           required: false,
           quote: "SMALL LOCAL EMERGING BUSINESS (SLEB) PREFERENCE POINTS",
@@ -501,6 +509,10 @@ EXHIBIT C: INSURANCE REQUIREMENTS. Insurance certificates are not required at th
       certifications: [
         {
           code: "SLEB",
+          mechanism: "preference" as const,
+          percent: 10,
+          goalPercent: 20,
+          exceptionAllowed: true,
           label: "SLEB preference points",
           required: false,
           quote: "SMALL LOCAL EMERGING BUSINESS (SLEB) PREFERENCE POINTS",
@@ -576,7 +588,7 @@ SMALL LOCAL EMERGING BUSINESS (SLEB) PREFERENCE POINTS apply. Behavioral Health 
     requirements: {
       licenses: [],
       certifications: [
-        { code: "SLEB", label: "SLEB Information Sheet required; certification gives preference", required: false, quote: "Exhibit A – Bid Response Packet, Small Local Emerging Business (SLEB) Information Sheet" },
+        { code: "SLEB", mechanism: "preference" as const, percent: 10, goalPercent: 20, exceptionAllowed: true, label: "SLEB Information Sheet required; certification gives preference", required: false, quote: "Exhibit A – Bid Response Packet, Small Local Emerging Business (SLEB) Information Sheet" },
       ],
       insurance: [
         { type: "general-liability", limit: 1_000_000, aggregate: 2_000_000 },
@@ -846,7 +858,7 @@ ${GSA_BOILERPLATE}`,
       ],
       certifications: [
         { code: "MEDI_CAL_PROVIDER", label: "Medi-Cal certified provider", required: true, quote: "Substance Use Disorder Youth Residential Treatment" },
-        { code: "SLEB", label: "SLEB preference points", required: false, quote: "SLEB" },
+        { code: "SLEB", mechanism: "preference" as const, percent: 10, goalPercent: 20, exceptionAllowed: true, label: "SLEB preference points", required: false, quote: "SLEB" },
       ],
       insurance: [
         { type: "general-liability", limit: 1_000_000, aggregate: 2_000_000 },
@@ -1288,7 +1300,7 @@ ${GSA_BOILERPLATE}`,
     requirements: {
       licenses: [],
       certifications: [
-        { code: "SLEB", label: "SLEB preference points", required: false, quote: "Exhibit A – Bid Response Packet, Debarment and Suspension Certification" },
+        { code: "SLEB", mechanism: "preference" as const, percent: 10, goalPercent: 20, exceptionAllowed: true, label: "SLEB preference points", required: false, quote: "Exhibit A – Bid Response Packet, Debarment and Suspension Certification" },
       ],
       insurance: [
         { type: "general-liability", limit: 1_000_000, aggregate: 2_000_000 },

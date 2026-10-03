@@ -9,7 +9,7 @@ import type { ProfileDraft } from "@/lib/engine/profile/extract";
 import { useProfile } from "@/state/profile";
 import { Button, Callout } from "@/components/ui";
 
-const CERT_GROUPS: CertGroup[] = ["county-regional", "state-federal", "trade"];
+const CERT_GROUPS: CertGroup[] = ["county-regional", "state", "federal", "trade"];
 
 const SIZE_OPTIONS: { label: string; value: { min: number; max: number } | "unknown" }[] = [
   { label: "Under $25k", value: { min: 1_000, max: 25_000 } },

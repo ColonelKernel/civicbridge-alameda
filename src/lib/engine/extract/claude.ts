@@ -18,6 +18,7 @@ Rules:
 - Dates as YYYY-MM-DD, times as 24-hour HH:mm, money as plain numbers (e.g. 1500000).
 - "certifications" are third-party credentials (SLEB, DIR registration, ServSafe, court interpreter, BSIS, QEI, NICET). Forms the bidder signs (debarment, Iran Contracting Act, exceptions) belong in "documents".
 - "required" on a certification is false when it is a preference, bonus points, or a subcontracting goal.
+- Classify every small-business program by "mechanism": "set-aside" when only certified firms may bid (DGS SB/DVBE Option, UC Small Business First, a total small business set-aside under FAR 19.5, a Port VSBE-only project); "preference" for a scoring or price bonus (County SLEB up to 10%, DGS 5% SB preference, EBMUD 7% discount, Oakland bid discount); "participation-goal" when a share of the work must go to certified firms (County 20% SLEB subcontracting, 3% DVBE goal, Oakland 50% L/SLBE, DBE goals, Section 3); "directed-spend" when the agency steers purchases of a stated size to certified firms; "registration" for SAM.gov or a vendor database; "reporting" when the program only tracks spending. Put the percentage in "percent" (preference, discount or set-aside share) or "goalPercent" (participation share), and set "exceptionAllowed" when the posting allows a written exception, waiver or good-faith effort instead. Use null for a trade credential.
 - "summary": one or two plain sentences on what the agency actually needs, in everyday words.
 - Use null for anything not stated. Do not pad arrays with guesses.`;
 

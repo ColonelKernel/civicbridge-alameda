@@ -154,12 +154,34 @@ export const LicenseReqSchema = z.object({
   quote: z.string().optional(),
 });
 
+/**
+ * How a stated small-business or local program affects a bid. The mechanism
+ * decides what missing status means: a set-aside limits who may bid, a
+ * preference only changes scoring, a participation goal is work to plan.
+ */
+export const PROGRAM_MECHANISMS = ["set-aside", "directed-spend", "preference", "participation-goal", "registration", "reporting"] as const;
+export type ProgramMechanism = (typeof PROGRAM_MECHANISMS)[number];
+
 export const CertReqSchema = z.object({
   code: z.string(),
   label: z.string(),
+  /** True when the bidder must hold it to be considered. */
   required: z.boolean(),
   quote: z.string().optional(),
+  /** Absent: a required credential (required) or a scoring preference (not required). */
+  mechanism: z.enum(PROGRAM_MECHANISMS).optional(),
+  /** Preference percentage, bonus points or goal percentage, as the solicitation states it. */
+  percent: z.number().optional(),
+  /** Subcontracting share a non-certified prime must commit to certified firms (County SLEB: 20%). */
+  goalPercent: z.number().optional(),
+  /** The solicitation lets a non-certified bidder take a written exception or show good-faith efforts. */
+  exceptionAllowed: z.boolean().optional(),
+  /** Other certification codes that satisfy the same requirement (any one is enough). */
+  alternatives: z.array(z.string()).optional(),
+  /** Set-asides: the whole contract, or a reserved portion of it. */
+  scope: z.enum(["total", "partial"]).optional(),
 });
+export type CertRequirement = z.infer<typeof CertReqSchema>;
 
 export const InsuranceReqSchema = z.object({
   type: z.enum(INSURANCE_TYPES),
@@ -368,6 +390,7 @@ export type RuleId =
   | "license"
   | "certRequired"
   | "certPreferred"
+  | "participationGoal"
   | "insurance"
   | "experience"
   | "bonding"

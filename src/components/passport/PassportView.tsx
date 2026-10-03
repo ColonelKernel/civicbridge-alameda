@@ -9,6 +9,7 @@ import { FUNDING_LANE_LABELS, HARMONIZATION, STATUS_TAGS } from "@/lib/data/prog
 import { agencyFor } from "@/lib/data/agencies";
 import { BRAND } from "@/lib/data/brand";
 import { Callout, EntityMark, Eyebrow } from "@/components/ui";
+import { MECHANISM_META, MECHANISM_ORDER } from "@/lib/data/mechanisms";
 import { DemoProfilePicker } from "@/components/profile/DemoProfilePicker";
 import { LogoMark } from "@/components/brand/Logo";
 
@@ -74,7 +75,7 @@ export function PassportView() {
             {profile.name}: Alameda County and East Bay buyers
           </h1>
           <p className={`text-muted mt-1 ${slide ? "text-sm" : "max-w-3xl"}`}>
-            What each regional buyer recognizes today, and a proposal to make it one application. Nothing on this page is a certification or an
+            What each regional buyer recognizes today and how it counts (set-aside, directed spending, preference, participation goal or registration), plus a proposal to make it one application. Nothing on this page is a certification or an
             eligibility finding; every status is self-reported and unverified.
           </p>
         </div>
@@ -167,6 +168,16 @@ export function PassportView() {
               {passport.counts.recognized} recognized · {passport.counts["likely-to-apply"]} likely to apply
             </p>
           </div>
+          {!slide && (
+            <dl className="mt-2 grid gap-x-3 gap-y-1 sm:grid-cols-2 text-[11px] text-muted border-b border-line pb-2">
+              {MECHANISM_ORDER.map((k) => (
+                <div key={k} className="flex gap-1.5">
+                  <dt className={`shrink-0 rounded-full px-1.5 py-0.5 font-medium ${MECHANISM_META[k].cls}`}>{MECHANISM_META[k].short}</dt>
+                  <dd>{MECHANISM_META[k].effect}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           <ul className={`divide-y divide-line ${slide ? "mt-1" : "mt-2"}`}>
             {shown.map((p) => {
               const agency = p.program.agencyId ? agencyFor(p.program.agencyId) : null;
@@ -185,6 +196,17 @@ export function PassportView() {
                       <span className="text-muted text-xs">{p.program.name}</span>
                       <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium ${STANDING_CLS[p.standing]}`}>{STANDING_LABELS[p.standing]}</span>
                     </div>
+                    {p.program.mechanisms.length > 0 && (
+                      <ul className="mt-1 flex flex-wrap gap-1" aria-label="Mechanisms">
+                        {p.program.mechanisms.map((m, i) => (
+                          <li key={`${m.kind}-${i}`} className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${MECHANISM_META[m.kind].cls}`} title={m.summary}>
+                            {m.percent ? `${m.percent}% ` : ""}
+                            {MECHANISM_META[m.kind].short}
+                            {m.threshold && !slide ? ` · ${m.threshold}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <p className={`text-xs text-ink/85 mt-0.5 ${slide ? "line-clamp-1" : ""}`}>{p.program.benefit}</p>
                     {!slide && <p className="text-xs text-muted mt-0.5">{p.why}</p>}
                     <p className="text-[11px] text-muted mt-0.5 flex flex-wrap gap-x-2">

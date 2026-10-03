@@ -2,22 +2,26 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProfile } from "@/state/profile";
 import { buildSummary } from "@/lib/engine/explain";
 import { buildChecklist } from "@/lib/engine/checklist";
 import { agencyFor } from "@/lib/data/agencies";
 import type { CivicDate } from "@/lib/data/types";
 import { countdownLabel, formatCivic, urgency } from "@/lib/engine/dates";
-import { BurdenTag, Callout, DeadlineChip, EntityMark, FitBadge, SectionHeading, SourceTag } from "@/components/ui";
+import { BurdenTag, Callout, DeadlineChip, EntityMark, FitBadge, MechanismBadges, SectionHeading, SourceTag } from "@/components/ui";
 import { useLanguage } from "@/state/language";
 import { FitScorePanel } from "./FitScorePanel";
 import { PlainSummary } from "./PlainSummary";
 import { ChecklistView } from "./ChecklistView";
 import { SourcePanel } from "./SourcePanel";
+import { BriefView } from "./BriefView";
+import { TeamingPanel } from "./TeamingPanel";
 
 export function OpportunityDetail({ id }: { id: string }) {
   const { hydrated, profile, resultById, allSolicitations, todayISO, ticks, toggleTick } = useProfile();
   const { t } = useLanguage();
+  const brief = useSearchParams().get("brief") === "1";
   const sol = allSolicitations.find((s) => s.id === id);
   const match = resultById[id];
   const summary = useMemo(() => (sol ? buildSummary(sol, todayISO, match) : []), [sol, todayISO, match]);
@@ -43,6 +47,8 @@ export function OpportunityDetail({ id }: { id: string }) {
       </div>
     );
   }
+
+  if (brief && match) return <BriefView sol={sol} match={match} checklist={checklist} today={todayISO} />;
 
   const due = sol.dates.submissionDue;
   const closed = sol.status !== "open" || due.date < todayISO;
@@ -74,6 +80,14 @@ export function OpportunityDetail({ id }: { id: string }) {
             <SourceTag source={sol.provenance.source} listingOnly={sol.listingOnly} />
             {match && <BurdenTag level={match.adminBurden} reasons={match.adminBurdenReasons} />}
           </div>
+          <MechanismBadges sol={sol} size="md" className="mt-2" />
+          {match && (
+            <div className="mt-3 no-print">
+              <Link href={`/opportunities/${encodeURIComponent(sol.id)}?brief=1`} className="inline-flex items-center gap-1 rounded-full border border-line bg-paper px-3 py-1.5 text-sm text-ink hover:bg-slate-soft">
+                {t("detail.brief")}
+              </Link>
+            </div>
+          )}
         </div>
         <div className={`rounded-xl px-4 py-3 min-w-[16rem] ${dueCls}`}>
           <div className="text-xs uppercase tracking-wide opacity-80">Response due</div>
@@ -126,6 +140,7 @@ export function OpportunityDetail({ id }: { id: string }) {
               <FitScorePanel match={match} variant="full" />
             </section>
           )}
+          <TeamingPanel sol={sol} match={match} />
           <section>
             <SectionHeading title={t("section.summary")} subtitle={t("section.summary.sub")} />
             <PlainSummary sections={summary} />

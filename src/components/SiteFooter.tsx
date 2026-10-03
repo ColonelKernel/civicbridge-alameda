@@ -28,8 +28,18 @@ export function SiteFooter() {
         </p>
         <p>
           Records marked <em>sample</em> were written for this demo in the County&apos;s format and are not live postings. Records marked{" "}
-          <em>from the portal</em> were entered by hand from documents downloaded on Oct 3, 2026 and may have changed since. Built for the{" "}
-          {BRAND.challenge}.
+          <em>from the portal</em> were entered by hand from documents downloaded on Oct 3, 2026 and may have changed since.
+        </p>
+        <p>
+          Built for {BRAND.challenge}, convened with {BRAND.partners}, in support of the {BRAND.vision.program} 10X goal{" "}
+          <a href={BRAND.vision.url} target="_blank" rel="noreferrer" className="underline hover:text-ink">
+            {BRAND.vision.goal}
+          </a>
+          .{" "}
+          <Link href="/pitch" className="underline hover:text-ink">
+            For judges: the two-minute pitch and rubric
+          </Link>
+          .
         </p>
         <p className="text-xs">{BRAND.nonAffiliation}</p>
       </div>

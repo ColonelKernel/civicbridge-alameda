@@ -31,7 +31,7 @@ const FIELD_LABELS: Record<string, string> = {
   "dates.preBidMeeting.prerequisite": "Meeting prerequisite",
   "dates.siteVisit.prerequisite": "Site visit prerequisite",
   sourceUrl: "Posting",
-  standard: "General County practice",
+  standard: "General practice, not from the posting",
   scopeTags: "Scope",
   secondaryCategories: "Scope",
 };

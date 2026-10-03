@@ -109,6 +109,7 @@ const LIST_ORDER: RuleId[] = [
   "capabilityMatch",
   "lexicalSimilarity",
   "certPreferred",
+  "participationGoal",
   "insurance",
   "dirRegistration",
   "bonding",

@@ -9,6 +9,10 @@
  */
 import type { Evidence, MatchResult, Solicitation, SourceRef } from "@/lib/data/types";
 import { GLOSSARY, glossaryFor } from "@/lib/data/glossary";
+import { CERT_BY_CODE, certLabel } from "@/lib/data/certifications";
+import { PROGRAM_BY_ID } from "@/lib/data/programs";
+import { agencyFor } from "@/lib/data/agencies";
+import { participationShares } from "@/lib/data/mechanisms";
 import { daysBetween, formatCivic, formatDate, subtractBusinessDays, type ISODate } from "./dates";
 
 export type ItemOrigin = "solicitation" | "standard" | "glossary-advice";
@@ -49,6 +53,8 @@ function hashDates(sol: Solicitation): string {
   return Math.abs(h).toString(36);
 }
 
+const money = (n: number) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : `$${Math.round(n / 1000).toLocaleString()}k`);
+
 export function buildChecklist(sol: Solicitation, today: ISODate, match?: MatchResult): Checklist {
   const due = sol.dates.submissionDue;
   const closed = sol.status !== "open" || due.date < today;
@@ -61,7 +67,10 @@ export function buildChecklist(sol: Solicitation, today: ISODate, match?: MatchR
   for (const l of r.licenses) {
     prepItems.push({ id: `confirm-license-${l.code}`, label: `Confirm your ${l.label} is active and note the number for the bid forms`, origin: "solicitation", sourceRef: { field: "requirements.licenses", quote: l.quote }, glossaryKey: glossaryFor(`license:${l.code}`)?.key });
   }
-  prepItems.push({ id: "vendor-registration", label: "Register on the County of Alameda Procurement Portal (free) and follow this project", detail: "Needed to download documents, ask questions and upload your response.", origin: "standard", sourceRef: { field: "standard" }, glossaryKey: "registration:COUNTY_VENDOR", link: GLOSSARY["registration:COUNTY_VENDOR"].link });
+  const agency = agencyFor(sol.agencyId);
+  const share = participationShares(sol)[0];
+  if (agency.countyGoverned) prepItems.push({ id: "vendor-registration", label: "Register on the County of Alameda Procurement Portal (free) and follow this project", detail: "Needed to download documents, ask questions and upload your response.", origin: "standard", sourceRef: { field: "standard" }, glossaryKey: "registration:COUNTY_VENDOR", link: GLOSSARY["registration:COUNTY_VENDOR"].link });
+  else prepItems.push({ id: "vendor-registration", label: `Register on ${agency.displayName}'s bid portal, if you have not already, and follow this posting`, detail: "The posting says where to download documents, ask questions and submit. Registration is usually free; do it early in case approval takes a day.", origin: "standard", sourceRef: { field: "standard" }, link: agency.procurementUrl ?? undefined });
   if (r.dirRegistration) prepItems.push({ id: "dir-registration", label: "Confirm or obtain DIR public works registration", origin: "solicitation", sourceRef: { field: "requirements.dirRegistration" }, glossaryKey: "registration:DIR", link: GLOSSARY["registration:DIR"].link });
   for (const b of r.bonding) {
     prepItems.push({ id: `bond-${b.type}`, label: `Call a surety broker about the ${b.type} bond${b.percent ? ` (${b.percent}%)` : ""}`, origin: "solicitation", sourceRef: { field: "requirements.bonding", quote: b.quote }, glossaryKey: `bonding:${b.type.toUpperCase()}` });
@@ -90,6 +99,26 @@ export function buildChecklist(sol: Solicitation, today: ISODate, match?: MatchR
       });
     }
   }
+  if (match) {
+    for (const e of match.evidence) {
+      if (e.ruleId !== "participationGoal" || e.status !== "check") continue;
+      const code = (e.requirementKey ?? "goal:").slice(5);
+      const req = r.certifications.find((c) => c.code.toUpperCase() === code);
+      const pct = req?.mechanism === "participation-goal" ? (req.goalPercent ?? req.percent) : req?.goalPercent;
+      const program = CERT_BY_CODE[code]?.programId ? PROGRAM_BY_ID[CERT_BY_CODE[code].programId!] : undefined;
+      const v = sol.estimatedValue;
+      const share = pct && v ? ` (about ${money(Math.round((v.min * pct) / 100))}${v.min !== v.max ? `–${money(Math.round((v.max * pct) / 100))}` : ""} of the agency's estimate)` : "";
+      prepItems.push({
+        id: `teaming-${code}`,
+        label: `Line up certified ${certLabel(code)} subcontractors for the ${pct ? `${pct}% ` : ""}participation share${share}${req?.exceptionAllowed ? ", or prepare the written exception" : ""}`,
+        detail: e.detail,
+        origin: "solicitation",
+        sourceRef: e.sourceRef,
+        glossaryKey: e.glossaryKey,
+        link: program?.directoryUrl ?? program?.officialUrl,
+      });
+    }
+  }
   const meetings = [d.preBidMeeting, d.siteVisit].filter(Boolean) as NonNullable<typeof d.preBidMeeting>[];
   const firstMeeting = meetings.map((m) => m.when.date).sort()[0];
   const prepDate = firstMeeting ? subtractBusinessDays(firstMeeting, 2) : subtractBusinessDays(due.date, 10);
@@ -114,7 +143,7 @@ export function buildChecklist(sol: Solicitation, today: ISODate, match?: MatchR
       label: m.mandatory ? `Mandatory ${kind}` : `Optional ${kind}`,
       date: m.when.date,
       kind: "on",
-      items: [{ id: `attend-${field}`, label: `${m.mandatory ? "Attend (required)" : "Attend if you can"}: ${kind} at ${formatCivic(m.when)}`, detail: `${m.location}${m.mandatory ? ". Sign the attendance list; bids from companies not on it are rejected." : ". Good place to meet primes looking for SLEB subcontractors."}`, origin: "solicitation", sourceRef: { field, quote: m.quote }, mandatory: m.mandatory, glossaryKey: "meeting:PREBID" }],
+      items: [{ id: `attend-${field}`, label: `${m.mandatory ? "Attend (required)" : "Attend if you can"}: ${kind} at ${formatCivic(m.when)}`, detail: `${m.location}${m.mandatory ? ". Sign the attendance list; bids from companies not on it are rejected." : `. Good place to meet primes${share ? ` looking for ${certLabel(share.code)} subcontractors` : " and partners"}.`}`, origin: "solicitation", sourceRef: { field, quote: m.quote }, mandatory: m.mandatory, glossaryKey: "meeting:PREBID" }],
       notes: [],
     });
   }
@@ -147,7 +176,7 @@ export function buildChecklist(sol: Solicitation, today: ISODate, match?: MatchR
   }));
   if (sol.listingOnly) docItems.push({ id: "read-posting", label: "Open the posting and list every required document", origin: "standard", sourceRef: { field: "sourceUrl", url: sol.sourceUrl } });
   docItems.push({ id: "check-addenda", label: "Check the project page for addenda and use the newest version of every form", origin: "standard", sourceRef: { field: "standard" }, glossaryKey: "doc:ADDENDA" });
-  if (r.insurance.length) docItems.push({ id: "insurance-broker", label: "Send the insurance requirements to your broker and ask for a sample certificate with County endorsements", detail: "Certificates are due before award, not with the bid, but a quote now avoids surprises.", origin: "solicitation", sourceRef: { field: "requirements.insurance" }, glossaryKey: "insurance:general-liability" });
+  if (r.insurance.length) docItems.push({ id: "insurance-broker", label: `Send the insurance requirements to your broker and ask for a sample certificate with ${agency.countyGoverned ? "County" : agency.displayName} endorsements`, detail: "Certificates are due before award, not with the bid, but a quote now avoids surprises.", origin: "solicitation", sourceRef: { field: "requirements.insurance" }, glossaryKey: "insurance:general-liability" });
   groups.push({ id: "documents", label: "Prepare your response", date: subtractBusinessDays(due.date, 3), kind: "before", items: docItems, notes: [] });
 
   // ---- Submit

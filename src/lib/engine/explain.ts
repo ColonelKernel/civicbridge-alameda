@@ -6,6 +6,8 @@
  */
 import { INSURANCE_LABELS, type MatchResult, type Solicitation, type SourceRef } from "@/lib/data/types";
 import { daysBetween, formatCivic, formatDate, type ISODate } from "./dates";
+import { certLabel } from "@/lib/data/certifications";
+import { agencyFor } from "@/lib/data/agencies";
 
 export type SectionKey = "need" | "money" | "who" | "submit" | "dates" | "watch";
 
@@ -117,13 +119,19 @@ export function buildSummary(sol: Solicitation, today: ISODate, match?: MatchRes
     else watch.push({ text: `Attendance at the ${formatDate(m.when.date)} meeting is mandatory. Bids from companies not on the attendance list are rejected.`, tone: "warn", sourceRef: { field: "dates.preBidMeeting", quote: m.quote } });
   }
   if (r.prevailingWage) watch.push({ text: "Public works rules: prevailing wage rates, certified payroll and DIR registration. Price your labor with DIR rates, not market rates.", tone: "warn", sourceRef: { field: "requirements.prevailingWage" } });
-  if (r.livingWage) watch.push({ text: "The County living wage requirement applies to staff on this contract.", tone: "warn", sourceRef: { field: "requirements.livingWage" } });
+  if (r.livingWage) watch.push({ text: agencyFor(sol.agencyId).countyGoverned ? "The County living wage requirement applies to staff on this contract." : `${agencyFor(sol.agencyId).displayName}'s living wage ordinance applies to staff on this contract.`, tone: "warn", sourceRef: { field: "requirements.livingWage" } });
   if (r.bonding.length) watch.push({ text: "Bonds are required. If you have never been bonded, call a surety broker this week; first-time bonding takes weeks.", tone: "warn", sourceRef: { field: "requirements.bonding" } });
   if (daysLeft >= 0 && daysLeft <= 10) watch.push({ text: `Only ${daysLeft} day${daysLeft === 1 ? "" : "s"} left. Upload a day early; the portal closes at the stated time and late uploads are refused.`, tone: "warn", sourceRef: { field: "dates.submissionDue" } });
   if (r.location.type === "county-required") watch.push({ text: "Bidders must be located in Alameda County.", tone: "warn", sourceRef: { field: "requirements.location", quote: r.location.quote } });
   if (d.questionsDue && d.preBidMeeting && d.questionsDue.date < d.preBidMeeting.when.date) watch.push({ text: "Questions are due before the bidders conference, so read the packet first.", tone: "info", sourceRef: { field: "dates.questionsDue" } });
-  const sleb = r.certifications.find((c) => c.code === "SLEB");
-  if (sleb && !sleb.required) watch.push({ text: "Not SLEB certified? You can still bid, but the County asks non-SLEB bidders to subcontract 20% to a certified SLEB or list an exception on the Exceptions form.", tone: "info", sourceRef: { field: "requirements.certifications", quote: sleb.quote } });
+  for (const c of r.certifications) {
+    const mechanism = c.mechanism ?? (c.required ? "credential" : "preference");
+    const ref = { field: "requirements.certifications", quote: c.quote };
+    if (mechanism === "set-aside") watch.push({ text: c.scope === "partial" ? `A portion of this work is set aside for ${c.label}; only firms with that status may bid on that portion.` : `Set aside for ${c.label}: only firms with that status may bid on it.`, tone: "warn", sourceRef: ref });
+    const goal = mechanism === "participation-goal" ? (c.goalPercent ?? c.percent) : c.goalPercent;
+    if (goal) watch.push({ text: `${goal}% ${certLabel(c.code)} participation: bidders without the certification must subcontract that share to certified firms${c.exceptionAllowed ? " or take a written exception on the form" : ""}. A certified prime's own work usually counts.${c.exceptionAllowed ? "" : " The posting does not describe an exception; ask before assuming one."}`, tone: "info", sourceRef: ref });
+    else if (mechanism === "preference" && c.percent) watch.push({ text: `${certLabel(c.code)} certification is worth a ${c.percent}% bid preference here. Not having it does not stop you from bidding.`, tone: "info", sourceRef: ref });
+  }
   if (match) {
     for (const e of match.classification.blockers) {
       if (e.ruleId === "availability" || e.ruleId === "mandatoryMeeting") continue;

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { AdminBurden, EvidenceStatus, Fit, FitConfidence, FitRecommendation } from "@/lib/data/types";
+import type { AdminBurden, EvidenceStatus, Fit, FitConfidence, FitRecommendation, Solicitation } from "@/lib/data/types";
+import { MECHANISM_META, mechanismBadges } from "@/lib/data/mechanisms";
 import { countdownLabel, formatCivic, urgency } from "@/lib/engine/dates";
 import type { CivicDate } from "@/lib/data/types";
 import { GOVERNANCE_LABELS, type Agency, type Governance } from "@/lib/data/agencies";
@@ -208,9 +209,9 @@ export function FitScoreChip({ score, status, recommendation, size = "md" }: { s
           <span className="opacity-70 font-normal">/100</span>
         </>
       ) : (
-        <span className="font-semibold">Blocked</span>
+        <span className="font-semibold">{m.short}</span>
       )}
-      <span className="opacity-90 font-normal">· {m.short}</span>
+      {status === "scored" && <span className="opacity-90 font-normal">· {m.short}</span>}
     </span>
   );
 }
@@ -290,5 +291,24 @@ export function EntityMark({ agency, size = "md", showGovernance = false, classN
         </span>
       )}
     </span>
+  );
+}
+
+/** The small-business program mechanisms a posting states, as colour-coded chips. */
+export function MechanismBadges({ sol, size = "sm", className = "" }: { sol: Pick<Solicitation, "requirements">; size?: "sm" | "md"; className?: string }) {
+  const badges = mechanismBadges(sol);
+  if (badges.length === 0) return null;
+  return (
+    <ul className={`flex flex-wrap gap-1.5 ${className}`} aria-label="Stated small-business program mechanisms">
+      {badges.map((b) => (
+        <li
+          key={`${b.kind}-${b.code}`}
+          className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${size === "sm" ? "text-[11px]" : "text-xs"} ${MECHANISM_META[b.kind].cls}`}
+          title={`${MECHANISM_META[b.kind].label}: ${MECHANISM_META[b.kind].effect}`}
+        >
+          {b.text}
+        </li>
+      ))}
+    </ul>
   );
 }

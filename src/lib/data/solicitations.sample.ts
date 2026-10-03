@@ -86,6 +86,10 @@ function curated(s: CuratedSpec): SolicitationInput {
     code: "SLEB",
     label: "Alameda County SLEB certification (preference points; not required to bid)",
     required: false,
+    mechanism: "preference" as const,
+    percent: 10,
+    goalPercent: 20,
+    exceptionAllowed: true,
     quote: "If a Bidder is certified by the County as either a small and local or an emerging and local business (SLEB), the County will provide up to 5% bid preference for procurements over $25,000",
   };
   return {

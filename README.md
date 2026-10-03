@@ -35,7 +35,7 @@ Optional configuration (copy `.env.example` to `.env.local`):
 Checks:
 
 ```bash
-npm test            # 66 vitest tests: data, engine, fit score, similarity, passport, extraction, profile autofill
+npm test            # 85 vitest tests: data, engine, fit score, similarity, passport, set-aside mechanisms, extraction, profile autofill
 npm run build       # Next.js production build
 npm run lint
 npm run fetch-attachments   # re-pull solicitation documents from the County (see §2)
@@ -60,14 +60,14 @@ cache live in `localStorage`. No vendor data is stored server-side.
 ## 2. Architecture
 
 ```
-src/lib/data/            DATA      schema (zod), 61 solicitations, 51-buyer registry, programs, certifications, glossary, synonyms, brand
+src/lib/data/            DATA      schema (zod), 70 solicitations, 51-buyer registry, programs, certifications, mechanisms, glossary, synonyms, brand
 src/lib/engine/          MATCHING  category inference, rules -> evidence, classification, fit-score, similarity, dashboard, passport
 src/lib/engine/          EXPLAIN   explain.ts (six-section summary), checklist.ts (dated plan)
 src/lib/engine/extract/  PASTE     quote-verified solicitation extraction: Claude or heuristic -> shared materialize()
 src/lib/engine/profile/  AUTOFILL  quote-verified profile extraction from a website or capability statement
 src/lib/engine/translate/          Claude translation of generated text (server only)
 src/lib/i18n/            LANGUAGE  dictionaries for the interface; locale list for the Bay Area
-src/app + components     UI        landing/profile, dashboard, opportunity detail, passport, paste, sources
+src/app + components     UI        landing/profile, dashboard (chips + wording match), detail (+ one-page brief, teaming), passport, paste, sources, pitch
 src/state/               STATE     profile.tsx (profile, pasted, ticks) and language.tsx (locale, translation cache)
 scripts/fetch-attachments.mjs      pulls solicitation documents into public/docs
 tests/                             vitest
@@ -81,9 +81,12 @@ minimum staffing, other), documents to submit, `attachments` (files copied into 
 tags, contact, source URL, source excerpt, status, `listingOnly`, and `provenance`. Every requirement carries a
 `quote`; a test asserts each quote appears in its record's `sourceExcerpt`.
 
-**Dataset (61 records, 51 buyers).** 17 records read from real County solicitation packages, 32 curated records in
-the same County format (fictional contacts at `@acgov.example`), 12 listing-only records from other agencies'
-portals. `src/lib/data/agencies.ts` registers 51 buyers: 26 County departments, commissions, districts, JPAs,
+**Dataset (70 records, 51 buyers).** 17 records read from real County solicitation packages, 32 curated records in
+the same County format (fictional contacts at `@acgov.example`), 9 curated regional records that exercise every
+set-aside mechanism (Port VSBE set-aside, Caltrans DVBE goal and SB preference, UC Small Business First, two federal
+total small business set-asides, EBMUD's 7% discount, Oakland's 50% L/SLBE requirement, HUD Section 3, a County
+purchase at or under $25,000; `src/lib/data/solicitations.regional.ts`, contacts on `.example` domains), and 12
+listing-only records from other agencies' portals. `src/lib/data/agencies.ts` registers 51 buyers: 26 County departments, commissions, districts, JPAs,
 authorities and courts (links read on 2026-10-03), plus the 14 cities, BART, Port of Oakland, EBMUD, the City of
 Alameda housing authority, UC Berkeley, three school districts, Cal eProcure, Caltrans District 4 and SAM.gov. The
 added entries link to the official domain only and are marked *unchecked* with a look-up note until each bids page
@@ -110,6 +113,37 @@ unknown / na), a confidence (stated / inferred), a label, detail, action and a `
 `unknown` is never treated as `missing`. **Unlikely fit** if any gate rule is missing; **strong** if the trade match
 is primary-to-primary, nothing is missing, no gate rule is unknown, scope and size fit and the record is not
 listing-only; **possible** otherwise.
+
+### Set-aside types (`src/lib/data/mechanisms.ts`, `src/lib/data/certifications.ts`)
+
+"Small business set-aside" means six different things across the buyers in the registry, and a missing status
+means something different under each. Every certification requirement on a solicitation carries a `mechanism`, and
+the rules engine, the posting cards, the detail header, the summary, the checklist and the Passport all use the same
+vocabulary:
+
+| mechanism | what it does | what a missing status means | examples (read on 2026-10-03) |
+|---|---|---|---|
+| **Set-aside** | competition limited to firms holding the status (`scope: total` or `partial`) | a gate: *Set aside for X; as stated, you cannot bid as the prime* | DGS SB/DVBE Option ($5,000.01–$249,999.99, ≥2 quotes from certified SB/Micro or DVBE); UC Small Business First ($10,000–$250,000 non-construction); FAR 19.502-2 Rule of Two; Port Very Small Business Program |
+| **Directed spending** | the buyer steers purchases under a threshold to certified firms, without a formal set-aside | a soft check: certified firms are asked to quote first, others are not barred | County departmental discretionary spending at or under $25,000 is directed to SLEBs |
+| **Bid preference** | a percentage or points added in evaluation, or a price discount | a soft check: *you lose the N% bid preference, not the right to bid* | County SLEB 5% small + 5% local (max 10%); DGS 5% SB preference; EBMUD 7% discount up to $150,000 per contract year; Oakland 2% discount for meeting the goal; Port up to 10 points on construction |
+| **Participation goal** | a share of the work must go to certified firms, or the posting's exception/good-faith route | a plan: `participationGoal` evidence with the dollar share, a teaming step on the checklist and the Teaming panel; a certified prime's own work counts | County 20% SLEB subcontracting on contracts over $25,000 (written exception on the Exceptions form); DVBE 3% goal; Oakland 50% L/SLBE (≥25% LBE + 25% SLBE) on construction ≥$100,000 |
+| **Registration** | a database registration required before award, not a size test | a gate: *Requires X* | SAM.gov (federal), DIR (public works) |
+| **Reporting** | a program that tracks spending | no effect | CPUC GO 156 |
+
+`alternatives` lists other codes that satisfy the same requirement (UC accepts DGS SB/Micro, SBA small, DVBE, 8(a),
+HUBZone, WOSB, SDVOSB); `goalPercent` on a preference carries the County's combined preference-plus-subcontracting
+clause. The certification catalog groups statuses as county/regional, state, federal and trade, each with its
+`basis` (size, location, age, ownership, registration, credential). Under California Constitution art. I, § 31 every
+state and local status here is size, location or age based; federal ownership programs (8(a), SDVOSB, WOSB, HUBZone)
+appear only on the federal lane and only when a solicitation states them. Nothing uses a status as a proxy for award
+odds: a set-aside blocks with the agency's sentence, a preference never earns more than 4 of 100 points, and goals,
+registrations and directed spending never change the score at all.
+
+The dashboard chip **Your certifications count** lists open postings where a program status you hold is met; the
+**Describe the work in your own words** box ranks the list by TF-IDF wording overlap computed in the browser (it
+re-orders, never scores). Every detail page has a printable one-page **brief** (`?brief=1`) and, where a goal is
+stated, a **Teaming** panel with the dollar share, the program's official directory link and a draft outreach note
+(ProcureFit keeps no vendor list and sends nothing). `/pitch` maps the build to the hackathon's five judging criteria.
 
 ### Bid Effort Fit (`src/lib/engine/fit-score.ts`, scoring v1.0.0)
 
@@ -237,6 +271,7 @@ state, federal). No agency seal or logo is reproduced; the footer states non-aff
 | 0:50 | Open **LED lighting retrofit**. | "83 out of 100, worth the effort. Four bars say where the points come from. Check-before-you-commit and Tell-us lists, each line with the quote." Switch the language toggle to Español. |
 | 1:30 | Scroll to **In your language** and **Your plan**. Tick two checklist items. Reload. | "Six sections, traceable to the solicitation. The plan is dated with County holidays. Ticks stay on this device." |
 | 1:50 | Back. Chip **Blocked** → the as-needed electrical contract. | "Mandatory job walk already happened. Blocked as stated, and the quote replaces the number." |
+| 2:00 | Chip **Your certifications count** → open the **Coast Guard grounds** or **UC help desk** record. | "Set-aside, preference, goal, directed spending: each gets its own label, so a missing certification reads as a gate, a scoring loss or a teaming plan, never a guess." |
 | 2:10 | Header "change business" → **Bayline Builders**. Open **SLEB Passport**. | "Fremont GC, SLEB certified. Recognized by the County, likely to apply for Fremont's preference, not applicable in Oakland. The proposal: one application, one alumni badge, each agency keeps its rule." Click **Print / slide view**. |
 | 2:40 | **Describe your own business** → paste a capability statement → **Autofill**. | "Website or capability statement in, profile out, every field with a quote." |
 | 2:55 | **Where we look**. | "51 buyers: the County, 14 cities, BART, the Port, EBMUD, school districts, state and federal entry points." |

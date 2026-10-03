@@ -77,9 +77,16 @@ export const ExtractionDraftSchema = z.object({
   licenses: z.array(z.object({ code: z.string().describe('CSLB class, e.g. "C-10" or "B"'), label: z.string(), quote: Q })),
   certifications: z.array(
     z.object({
-      code: z.string().describe("SLEB, DIR, SERVSAFE, COURT_INTERPRETER, BSIS_PPO, QEI, ASE, MEDI_CAL_PROVIDER, or another short code"),
+      code: z.string().describe("SLEB, DGS_SB, DGS_MB, DVBE, SAM_REGISTERED, SBA_SMALL, SBA_8A, HUBZONE, SDVOSB, WOSB, DBE, SECTION_3, OAKLAND_LSLBE, PORT_SBE, DIR, SERVSAFE, COURT_INTERPRETER, BSIS_PPO, QEI, ASE, MEDI_CAL_PROVIDER, or another short code"),
       label: z.string(),
-      required: z.boolean().describe("false when it is a preference or scoring bonus"),
+      required: z.boolean().describe("true only when the posting states a bidder must hold it to bid or be awarded; false for a preference, goal or directed spending"),
+      mechanism: z
+        .enum(["set-aside", "directed-spend", "preference", "participation-goal", "registration", "reporting"])
+        .nullable()
+        .describe("set-aside: only certified firms may bid; directed-spend: buyers steer small purchases to certified firms; preference: scoring bonus; participation-goal: a share of the work must go to certified firms; registration: a database registration such as SAM.gov; reporting: tracking only. null for a trade credential"),
+      percent: z.number().nullable().describe("The preference or discount percentage, or the set-aside share, when stated"),
+      goalPercent: z.number().nullable().describe("The participation or subcontracting share non-certified primes must meet, when stated"),
+      exceptionAllowed: z.boolean().nullable().describe("true when the posting lets a bidder take a written exception or waiver instead of meeting the goal"),
       quote: Q,
     }),
   ),
@@ -320,7 +327,16 @@ export function materialize(draft: ExtractionDraft, text: string, opts: Material
 
   const certifications = draft.certifications
     .filter((c) => keep("requirements.certifications", `Certification "${c.label}"`, c))
-    .map((c) => ({ code: c.code.toUpperCase().replace(/[^A-Z0-9_]/g, "_"), label: c.label, required: c.required, quote: c.quote }));
+    .map((c) => ({
+      code: c.code.toUpperCase().replace(/[^A-Z0-9_]/g, "_"),
+      label: c.label,
+      required: c.required,
+      quote: c.quote,
+      ...(c.mechanism ? { mechanism: c.mechanism } : {}),
+      ...(c.percent ? { percent: c.percent } : {}),
+      ...(c.goalPercent ? { goalPercent: c.goalPercent } : {}),
+      ...(c.exceptionAllowed ? { exceptionAllowed: true } : {}),
+    }));
 
   const insurance = draft.insurance
     .filter((i) => keep("requirements.insurance", `Insurance "${i.type}"`, i))
@@ -647,12 +663,69 @@ export function heuristicExtract(raw: string): ExtractionDraft {
 
   // ---- Certifications and programs
   const window = (idx: number, span = 160) => text.slice(Math.max(0, idx - span), idx + span);
+  const pctNear = (idx: number, re: RegExp, span = 260): number | null => {
+    const m = text.slice(Math.max(0, idx - span), idx + span).match(re);
+    return m ? Number(m[1]) : null;
+  };
   const sleb = text.match(/\bSLEB\b|small,? local,? (?:and )?emerging business/i);
   if (sleb && sleb.index !== undefined) {
     const w = window(sleb.index, 240);
     const required = /must be (?:a )?(?:certified )?sleb|sleb[- ]certif\w* (?:is )?(?:required|mandatory)|only (?:certified )?slebs? (?:may|can|are)/i.test(w);
-    draft.certifications.push({ code: "SLEB", label: "SLEB certification (Small, Local and Emerging Business)", required, quote: sentenceAround(text, sleb.index) });
+    const goal = pctNear(sleb.index, /subcontract\w*[^.]{0,60}?(\d{1,2})\s?%|(\d{1,2})\s?%[^.]{0,40}?(?:of the total|subcontract)/i, 400);
+    const goalAlt = goal ?? (() => { const m = text.slice(Math.max(0, sleb.index! - 400), sleb.index! + 400).match(/(\d{1,2})\s?%[^.]{0,60}?(?:total estimated bid|of the (?:total|contract))/i); return m ? Number(m[1]) : null; })();
+    const pref = pctNear(sleb.index, /up to (\d{1,2})\s?% bid preference|(\d{1,2})\s?% (?:bid )?preference/i, 300);
+    const directed = /\$25,000 and under|25,000 or less|discretionary/i.test(w) && /directed/i.test(w);
+    draft.certifications.push({
+      code: "SLEB",
+      label: "SLEB certification (Small, Local and Emerging Business)",
+      required,
+      mechanism: required ? "set-aside" : directed ? "directed-spend" : "preference",
+      percent: pref ?? (required ? null : 10),
+      goalPercent: required ? null : goalAlt,
+      exceptionAllowed: /take exception|exceptions and clarifications|waiver/i.test(window(sleb.index, 400)) ? true : null,
+      quote: sentenceAround(text, sleb.index),
+    });
     if (!required) draft.location = { type: "local-preference", radiusMiles: null, note: null, quote: sentenceAround(text, sleb.index) };
+  }
+  // ---- Small business set-asides, preferences and goals (state, federal, other local programs)
+  const PROGRAMS: { code: string; label: string; re: RegExp }[] = [
+    { code: "DGS_SB", label: "California DGS certified Small Business", re: /\b(?:DGS|state)[- ]certified small business|small business \(SB\)|\bSB\/DVBE\b|SB\/MB\b|certified small business|small business preference/i },
+    { code: "DGS_MB", label: "California DGS certified Microbusiness", re: /\bmicro-?business(?:es)?\b/i },
+    { code: "DVBE", label: "Disabled Veteran Business Enterprise (DVBE)", re: /\bDVBE\b|disabled veteran business enterprise/i },
+    { code: "SBA_SMALL", label: "Small business per the SBA size standard", re: /total small business set-?aside|small business set-?aside|SBA size standard|NAICS\s*\d{6}/i },
+    { code: "SBA_8A", label: "SBA 8(a) certification", re: /\b8\(a\)\b/ },
+    { code: "HUBZONE", label: "SBA HUBZone certification", re: /\bHUBZone\b/i },
+    { code: "SDVOSB", label: "Service-Disabled Veteran-Owned Small Business (SDVOSB)", re: /\bSDVOSB\b|service[- ]disabled veteran[- ]owned/i },
+    { code: "WOSB", label: "Woman-Owned Small Business (WOSB)", re: /\bWOSB\b|\bEDWOSB\b|wom[ae]n[- ]owned small business/i },
+    { code: "SECTION_3", label: "HUD Section 3 business concern", re: /\bSection 3\b/i },
+    { code: "OAKLAND_LSLBE", label: "City of Oakland L/SLBE certification", re: /\bL\/SLBE\b|\bSLBE\b|local and small local business enterprise/i },
+    { code: "PORT_SBE", label: "Port of Oakland SBE/VSBE certification", re: /\bVSBE\b|very small business enterprise|non-discrimination and small local business utilization/i },
+    { code: "DBE", label: "Disadvantaged Business Enterprise (DBE)", re: /\bDBE\b|disadvantaged business enterprise/i },
+  ];
+  for (const { code, label, re } of PROGRAMS) {
+    const m = text.match(re);
+    if (!m || m.index === undefined) continue;
+    if (draft.certifications.some((c) => c.code === code)) continue;
+    const w = window(m.index, 320);
+    const setAside = /set[- ]aside|reserved (?:for|exclusively)|only (?:certified )?[\w/() -]{0,40}(?:may|can|are eligible to) (?:bid|submit|compete)|restricted to/i.test(w);
+    const goalPct = pctNear(m.index, /(\d{1,2}(?:\.\d)?)\s?%\s?(?:participation )?(?:goal|minimum participation|utilization|subcontract\w*)|goal (?:of|is) (\d{1,2}(?:\.\d)?)\s?%|(\d{1,2}(?:\.\d)?)\s?% of the (?:contract|work|bid)/i, 320);
+    const prefPct = pctNear(m.index, /(\d{1,2})\s?% (?:bid |price |evaluation )?(?:preference|discount|credit)|preference of (\d{1,2})\s?%|(\d{1,2})\s?% (?:bidding )?discount/i, 320);
+    const participation = /participation|utilization|subcontract\w* (?:goal|plan)|good[- ]faith/i.test(w);
+    const mechanism = setAside ? "set-aside" : goalPct !== null && participation ? "participation-goal" : prefPct !== null ? "preference" : participation ? "participation-goal" : code === "DBE" || code === "SECTION_3" ? "participation-goal" : "preference";
+    draft.certifications.push({
+      code,
+      label,
+      required: mechanism === "set-aside",
+      mechanism,
+      percent: mechanism === "preference" ? prefPct : null,
+      goalPercent: mechanism === "participation-goal" ? goalPct : null,
+      exceptionAllowed: /good[- ]faith|waiver|exception/i.test(w) ? true : null,
+      quote: sentenceAround(text, m.index),
+    });
+  }
+  const sam = text.match(/\bSAM\.gov\b|system for award management|\bSAM registration\b|active (?:registration )?in SAM\b/i);
+  if (sam && sam.index !== undefined && !draft.certifications.some((c) => c.code === "SAM_REGISTERED")) {
+    draft.certifications.push({ code: "SAM_REGISTERED", label: "Active SAM.gov registration", required: true, mechanism: "registration", percent: null, goalPercent: null, exceptionAllowed: null, quote: sentenceAround(text, sam.index) });
   }
   const CERTS: [string, string, RegExp][] = [
     ["SERVSAFE", "ServSafe food safety certification", /servsafe|food (?:safety|handler) (?:certif|card)/i],
@@ -664,7 +737,7 @@ export function heuristicExtract(raw: string): ExtractionDraft {
   ];
   for (const [code, label, re] of CERTS) {
     const m = text.match(re);
-    if (m && m.index !== undefined) draft.certifications.push({ code, label, required: /must|shall|required/i.test(window(m.index, 120)), quote: sentenceAround(text, m.index) });
+    if (m && m.index !== undefined) draft.certifications.push({ code, label, required: /must|shall|required/i.test(window(m.index, 120)), mechanism: null, percent: null, goalPercent: null, exceptionAllowed: null, quote: sentenceAround(text, m.index) });
   }
   const dir = text.match(/\bDIR\b|department of industrial relations/i);
   if (dir && dir.index !== undefined && /regist|public works/i.test(window(dir.index, 200))) draft.dirRegistration = { quote: sentenceAround(text, dir.index) };

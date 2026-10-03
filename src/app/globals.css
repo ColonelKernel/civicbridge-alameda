@@ -96,7 +96,10 @@ body {
 /* Slide view for the Passport and print output: hide chrome, keep content. */
 html[data-slide="1"] header,
 html[data-slide="1"] footer,
-html[data-slide="1"] .no-print {
+html[data-slide="1"] .no-print,
+html[data-brief="1"] header,
+html[data-brief="1"] footer,
+html[data-brief="1"] .no-print {
   display: none;
 }
 

@@ -155,6 +155,12 @@ export function vectorizeVendor(index: CorpusIndex, profile: BusinessProfile): S
   return v;
 }
 
+/** Vectorize free text (a search box, a pasted paragraph) against the corpus IDF table. */
+export function vectorizeText(index: CorpusIndex, text: string): SparseVector {
+  const { tokens, rawCount } = tokenize(text);
+  return vectorize(termFrequencies(tokens), index.idf, rawCount);
+}
+
 /** Cosine of two L2-normalized sparse vectors, plus the top shared terms by contribution. */
 export function cosine(a: SparseVector, b: SparseVector): { value: number; shared: string[] } {
   let i = 0;

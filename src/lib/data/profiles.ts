@@ -36,7 +36,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
   {
     id: "demo-gc",
     emoji: "🏗️",
-    tagline: "Fremont general contractor, 25 employees, SLEB certified",
+    tagline: "Fremont general contractor, 25 employees, SLEB and DGS small business certified",
     name: "Bayline Builders",
     description:
       "Small general building contractor doing tenant improvements, ADA upgrades and renovations of occupied public buildings. We self-perform carpentry and sub out electrical and plumbing.",
@@ -50,7 +50,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     primaryCategorySource: "user",
     secondaryCategories: [],
     licenses: [{ code: "B" }],
-    certifications: ["SLEB", "DIR"],
+    certifications: ["SLEB", "DGS_SB", "DIR"],
     insurance: [
       { type: "general-liability", limit: 2_000_000 },
       { type: "auto", limit: 1_000_000 },
@@ -82,7 +82,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
   {
     id: "demo-janitorial",
     emoji: "🧹",
-    tagline: "Hayward janitorial company, 30 employees, SLEB certified",
+    tagline: "Hayward janitorial company, 30 employees, SLEB certified, SAM.gov registered",
     name: "ClearPath Facility Services",
     description:
       "Nightly janitorial, day porter and floor care for office buildings, clinics and schools in the East Bay. Union-free, living-wage employer with trained supervisors.",
@@ -96,7 +96,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     primaryCategorySource: "user",
     secondaryCategories: [],
     licenses: [],
-    certifications: ["SLEB"],
+    certifications: ["SLEB", "SAM_REGISTERED", "SBA_SMALL"],
     insurance: [
       { type: "general-liability", limit: 1_000_000 },
       { type: "auto", limit: 1_000_000 },
@@ -170,7 +170,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
   {
     id: "demo-landscaper",
     emoji: "🌳",
-    tagline: "San Leandro landscaping company, 15 employees",
+    tagline: "San Leandro landscaping company, 15 employees, DGS small business certified",
     name: "Estuary Landscape",
     description:
       "Commercial grounds maintenance, irrigation, tree trimming and weed abatement for HOAs, schools and public facilities. Licensed landscape contractor with a qualified applicator on staff.",
@@ -184,7 +184,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     primaryCategorySource: "user",
     secondaryCategories: [],
     licenses: [{ code: "C-27" }, { code: "QAL" }],
-    certifications: ["DIR"],
+    certifications: ["DIR", "DGS_SB"],
     insurance: [
       { type: "general-liability", limit: 1_000_000 },
       { type: "auto", limit: 1_000_000 },

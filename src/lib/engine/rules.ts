@@ -21,10 +21,15 @@ import {
   type Evidence,
   type Meeting,
   type Solicitation,
+  CertRequirement,
+  ProgramMechanism,
 } from "@/lib/data/types";
 import { findQuote, normalizeLicenseCode, normalizeText, phraseRegex, scoreCategory } from "@/lib/data/synonyms";
-import { GLOSSARY, glossaryFor } from "@/lib/data/glossary";
+import { GLOSSARY, glossaryFor, type GlossaryEntry } from "@/lib/data/glossary";
 import { daysBetween, formatCivic, formatDate, type ISODate } from "./dates";
+import { certLabel } from "@/lib/data/certifications";
+import { agencyFor } from "@/lib/data/agencies";
+import { participationShares } from "@/lib/data/mechanisms";
 
 export interface RuleContext {
   sol: Solicitation;
@@ -251,7 +256,7 @@ export const contractSize: Rule = ({ sol, profile }) => {
       status: "check",
       confidence: "confirmed",
       label: `Larger than your usual range (${range} ${basisWord})`,
-      detail: `You told us you usually take ${money(mine.min)}–${money(mine.max)}. This is not an eligibility rule: the agency sets no minimum business size. What usually matters at this size is bonding capacity, insurance limits and cash flow between invoices. Options: team with a prime, or respond as a certified SLEB subcontractor (non-SLEB primes must subcontract a share to SLEBs).`,
+      detail: `You told us you usually take ${money(mine.min)}–${money(mine.max)}. This is not an eligibility rule: the agency sets no minimum business size. What usually matters at this size is bonding capacity, insurance limits and cash flow between invoices. ${sizeOptions(sol)}`,
       profileRef: ["typicalContractSize"],
       action: "Ask your surety and bank what size you can carry, or look for a prime at the bidders conference.",
     }];
@@ -315,34 +320,102 @@ export const license: Rule = ({ sol, profile }) => {
   });
 };
 
+/** Teaming advice for a bid larger than the vendor's range, naming the stated participation goal when there is one. */
+function sizeOptions(sol: Solicitation): string {
+  const share = participationShares(sol)[0];
+  if (share) return `Options: team with a prime, or respond as a certified ${certLabel(share.code)} subcontractor (primes without the certification must subcontract ${share.percent}% to certified firms).`;
+  return "Options: team with a prime, or join another firm's bid as a subcontractor.";
+}
+
 export const certifications: Rule = ({ sol, profile }) => {
   const held = profile.certifications === "unknown" ? null : new Set(profile.certifications.map((c) => c.toUpperCase()));
-  return sol.requirements.certifications.map((req): Evidence => {
-    const key = `cert:${req.code.toUpperCase()}`;
+  const out: Evidence[] = [];
+  for (const req of sol.requirements.certifications) {
+    const code = req.code.toUpperCase();
+    const key = `cert:${code}`;
     const g = GLOSSARY[key];
+    const codes = [code, ...(req.alternatives ?? []).map((c) => c.toUpperCase())];
+    const heldVia = held ? codes.filter((c) => held.has(c)) : [];
+    const has = heldVia.length > 0;
+    const via = has && heldVia[0] !== code ? ` (via ${certLabel(heldVia[0])})` : "";
+    const alt = req.alternatives?.length ? ` or ${req.alternatives.map(certLabel).join(" / ")}` : "";
+    const pct = req.percent ? `${req.percent}%` : "";
+    const mechanism: ProgramMechanism | "credential" = req.mechanism ?? (req.required ? "credential" : "preference");
     const base = { requirementKey: key, glossaryKey: g?.key, sourceRef: { field: "requirements.certifications", quote: req.quote }, profileRef: ["certifications"] };
-    const has = held?.has(req.code.toUpperCase()) ?? false;
-    if (req.required) {
-      if (held === null) return { ...base, ruleId: "certRequired", ruleClass: "gate", status: "unknown", confidence: "confirmed", label: `Requires ${req.label}`, detail: "Tell us which certifications you hold and we will check this.", action: "Add your certifications to your profile." };
-      if (has) return { ...base, ruleId: "certRequired", ruleClass: "gate", status: "met", confidence: "confirmed", label: `${req.label} required, and you listed it`, detail: "Keep proof ready to attach." };
-      return { ...base, ruleId: "certRequired", ruleClass: "gate", status: "missing", confidence: "confirmed", label: `Requires ${req.label}, which you haven't listed`, detail: g ? `${g.meaning}` : "The solicitation states this certification is required.", action: g?.action };
+    const gate = { ...base, ruleId: "certRequired" as const, ruleClass: "gate" as const };
+    const soft = { ...base, ruleId: "certPreferred" as const, ruleClass: "soft" as const };
+
+    switch (mechanism) {
+      case "set-aside": {
+        if (req.scope === "partial") {
+          if (held === null) out.push({ ...soft, status: "unknown", confidence: "confirmed", label: `Part of this work is set aside for ${req.label}${alt}`, detail: "The reserved portion goes only to firms holding that status; the rest is open. Tell us which certifications you hold and we will check this.", action: "Add your certifications to your profile." });
+          else if (has) out.push({ ...soft, status: "met", confidence: "confirmed", label: `Part of this work is set aside for ${req.label}, which you listed${via}`, detail: "You can bid on the reserved portion as well as the open portion. Keep the certificate ready; the agency verifies status before award." });
+          else out.push({ ...soft, status: "check", confidence: "confirmed", label: `Part of this work is set aside for ${req.label}${alt}; you haven't listed it`, detail: `${g?.meaning ?? "Only firms holding that status may bid on the reserved portion."} The rest of the work is open competition; confirm which portion you can bid on.`, action: g?.action });
+          break;
+        }
+        if (held === null) out.push({ ...gate, status: "unknown", confidence: "confirmed", label: `Set aside for ${req.label}${alt}`, detail: "Only firms holding this status may bid on it. Tell us which certifications you hold and we will check this.", action: "Add your certifications to your profile." });
+        else if (has) out.push({ ...gate, status: "met", confidence: "confirmed", label: `Set aside for ${req.label}, and you listed it${via}`, detail: "Competition is limited to firms with this status. Keep the certificate or registration record ready; the agency verifies it before award." });
+        else out.push({ ...gate, status: "missing", confidence: "confirmed", label: `Set aside for ${req.label}${alt}, which you haven't listed`, detail: `${g?.meaning ?? "The solicitation limits competition to firms holding this status."} As stated, you cannot bid as the prime without it; subcontracting to a certified prime is the usual route.`, action: g?.action });
+        break;
+      }
+      case "registration":
+      case "credential": {
+        if (held === null) out.push({ ...gate, status: "unknown", confidence: "confirmed", label: `Requires ${req.label}${alt}`, detail: "Tell us which certifications and registrations you hold and we will check this.", action: "Add your certifications to your profile." });
+        else if (has) out.push({ ...gate, status: "met", confidence: "confirmed", label: `${req.label} required, and you listed it${via}`, detail: mechanism === "registration" ? "Keep the registration active through award; agencies check it before signing." : "Keep proof ready to attach." });
+        else out.push({ ...gate, status: "missing", confidence: "confirmed", label: `Requires ${req.label}${alt}, which you haven't listed`, detail: g ? `${g.meaning}` : mechanism === "registration" ? "The solicitation states this registration is required before award." : "The solicitation states this certification is required.", action: g?.action });
+        break;
+      }
+      case "preference": {
+        const prefWord = pct ? `${pct} bid preference` : "bid preference";
+        if (held === null) out.push({ ...soft, status: "unknown", confidence: "confirmed", label: `${req.label}: ${prefWord} if you hold it`, detail: "Tell us whether you hold it. It changes scoring, not whether you may bid." });
+        else if (has) out.push({ ...soft, status: "met", confidence: "confirmed", label: `${certLabel(code)} certified: ${prefWord}, and you listed it${via}`, detail: g?.meaning ?? "This is a scoring preference rather than a requirement; you have it." });
+        else out.push({ ...soft, status: "check", confidence: "confirmed", label: `Not ${certLabel(code)} certified: you lose the ${prefWord}, not the right to bid`, detail: g?.meaning ?? "This is a preference, not a requirement; you can still bid.", action: g?.action });
+        break;
+      }
+      case "participation-goal":
+        out.push(goalEvidence(req, req.goalPercent ?? req.percent ?? 0, held, has, via, g));
+        break;
+      case "directed-spend": {
+        if (held === null) out.push({ ...soft, status: "unknown", confidence: "confirmed", label: `Purchases this size are directed to ${req.label} firms`, detail: "Tell us whether you hold it. Directed spending steers quotes to certified firms; it does not bar others." });
+        else if (has) out.push({ ...soft, status: "met", confidence: "confirmed", label: `Purchases this size are directed to ${req.label} firms, and you listed it${via}`, detail: g?.meaning ?? "Buyers steer small purchases to certified firms; being certified is how you get asked to quote." });
+        else out.push({ ...soft, status: "check", confidence: "confirmed", label: `Purchases this size are directed to ${req.label} firms; you haven't listed it`, detail: `${g?.meaning ?? "Buyers steer small purchases to certified firms."} Not being certified does not bar you, but certified firms are asked first.`, action: g?.action });
+        break;
+      }
+      case "reporting":
+        out.push({ ...soft, status: "na", confidence: "confirmed", label: `${req.label}: reporting program only`, detail: "This program tracks spending; it changes neither who may bid nor how bids are scored." });
+        break;
     }
-    if (has) return { ...base, ruleId: "certPreferred", ruleClass: "soft", status: "met", confidence: "confirmed", label: `${req.code === "SLEB" ? "SLEB certified: up to 10% bid preference" : `${req.label} (preferred) listed`}`, detail: req.code === "SLEB" ? "Certified SLEBs get the local plus small/emerging preference, and you do not need a SLEB subcontractor." : "This is preferred rather than required; you have it." };
-    if (held === null) return { ...base, ruleId: "certPreferred", ruleClass: "soft", status: "unknown", confidence: "confirmed", label: `${req.label} preferred`, detail: "Tell us whether you hold it." };
-    return {
-      ...base,
-      ruleId: "certPreferred",
-      ruleClass: "soft",
-      status: "check",
-      confidence: "confirmed",
-      label: req.code === "SLEB" ? "Not SLEB certified: you lose the preference, not eligibility" : `${req.label} preferred, not listed`,
-      detail: req.code === "SLEB"
-        ? "You can still bid. Certified SLEBs get up to 10% added to their score, and non-SLEB bidders are usually asked to subcontract 20% to a certified SLEB or take an exception on the form."
-        : g?.meaning ?? "This is preferred, not required; you can still bid.",
-      action: g?.action,
-    };
-  });
+    // A preference program that also carries a subcontracting share for non-certified primes (County SLEB: 20%).
+    if (req.goalPercent && mechanism !== "participation-goal") out.push(goalEvidence(req, req.goalPercent, held, has, via, g));
+  }
+  return out;
 };
+
+function goalEvidence(req: CertRequirement, percent: number, held: Set<string> | null, has: boolean, via: string, g: GlossaryEntry | undefined): Evidence {
+  const code = req.code.toUpperCase();
+  const short = certLabel(code);
+  const pct = percent ? `${percent}% ` : "";
+  const exception = req.exceptionAllowed ? " or a written exception" : "";
+  const noException = req.exceptionAllowed ? "" : " The posting does not describe an exception; ask the contact before assuming one.";
+  const base = {
+    ruleId: "participationGoal" as const,
+    ruleClass: "soft" as const,
+    requirementKey: `goal:${code}`,
+    glossaryKey: code === "SLEB" ? "program:SLEB_SUBCONTRACT" : g?.key,
+    sourceRef: { field: "requirements.certifications", quote: req.quote },
+    profileRef: ["certifications"],
+  };
+  if (held === null) return { ...base, status: "unknown", confidence: "confirmed", label: `${pct}${short} participation goal`, detail: `Tell us whether you hold it. Without it you would need certified ${short} subcontractors for ${pct || "the stated share of "}the bid${exception}.${noException}`, action: "Add your certifications to your profile." };
+  if (has) return { ...base, status: "met", confidence: "confirmed", label: `${pct}${short} participation goal: your own certified work counts${via}`, detail: `As a certified ${short} firm, the work you self-perform usually counts toward the goal; confirm how this agency counts it. No subcontracting plan is needed for the goal itself.` };
+  return {
+    ...base,
+    status: "check",
+    confidence: "confirmed",
+    label: `${pct}${short} participation goal: plan certified subcontractors${req.exceptionAllowed ? " or a written exception" : ""}`,
+    detail: `Primes without the certification must commit ${pct || "the stated share of "}the bid to certified ${short} firms${exception}. Line up partners before the deadline and name them on the forms.${noException}`,
+    action: code === "SLEB" ? GLOSSARY["program:SLEB_SUBCONTRACT"]?.action : g?.action,
+  };
+}
 
 export const insurance: Rule = ({ sol, profile }) => {
   return sol.requirements.insurance.map((req): Evidence => {
@@ -360,7 +433,7 @@ export const insurance: Rule = ({ sol, profile }) => {
     if (req.limit !== "statutory" && have.limit !== undefined && have.limit < req.limit) {
       return { ...base, status: "check", confidence: "confirmed", label: `${label} limit below ${limitText}`, detail: `You listed $${(have.limit / 1_000_000).toFixed(1)}M; raising a limit is usually quick with your broker.`, action: "Ask your broker to raise the limit before award." };
     }
-    return { ...base, status: "met", confidence: "confirmed", label: `${label} listed`, detail: `You carry this coverage${req.limit === "statutory" ? "" : ` at or above ${limitText}`}. Certificate and County endorsements are due before award.` };
+    return { ...base, status: "met", confidence: "confirmed", label: `${label} listed`, detail: `You carry this coverage${req.limit === "statutory" ? "" : ` at or above ${limitText}`}. Certificate and ${agencyFor(sol.agencyId).countyGoverned ? "County" : "agency"} endorsements are due before award.` };
   });
 };
 

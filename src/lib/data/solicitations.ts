@@ -1,6 +1,7 @@
 import { REAL_SOLICITATIONS } from "./solicitations.real";
 import { SAMPLE_SOLICITATIONS } from "./solicitations.sample";
 import { LISTING_SOLICITATIONS } from "./solicitations.listing";
+import { REGIONAL_SOLICITATIONS } from "./solicitations.regional";
 import { parseSolicitations } from "./sources";
 import type { Solicitation, SolicitationInput } from "./types";
 import attachmentsJson from "./attachments.json";
@@ -22,6 +23,7 @@ function withAttachments(input: SolicitationInput): SolicitationInput {
 export const ALL_SOLICITATION_INPUTS: SolicitationInput[] = [
   ...REAL_SOLICITATIONS,
   ...SAMPLE_SOLICITATIONS,
+  ...REGIONAL_SOLICITATIONS,
   ...LISTING_SOLICITATIONS,
 ].map(withAttachments);
 

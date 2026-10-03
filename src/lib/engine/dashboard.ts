@@ -2,6 +2,7 @@
  * Dashboard sections, common-gap aggregation and filters, all derived from
  * MatchResults. Pure functions, no React.
  */
+import { PROGRAM_CERT_CODES } from "@/lib/data/certifications";
 import type { Category, Evidence, Fit, MatchResult } from "@/lib/data/types";
 import { glossaryFor, type GlossaryEntry } from "@/lib/data/glossary";
 import { rankScore } from "./fit-score";
@@ -39,7 +40,7 @@ const byDate = (a: MatchResult, b: MatchResult) => a.classification.daysUntilDue
 // over the single list, so a chip always shows exactly what its section did.
 // ---------------------------------------------------------------------------
 
-export type QuickFilter = "none" | "closing" | "easy" | "larger" | "blocked";
+export type QuickFilter = "none" | "closing" | "easy" | "larger" | "blocked" | "programs";
 
 const isOpen = (r: MatchResult) => r.classification.availability === "open";
 const isCandidate = (r: MatchResult) => isOpen(r) && r.classification.fit !== "poor";
@@ -50,12 +51,23 @@ export const isClosingSoon = (r: MatchResult) => isCandidate(r) && r.classificat
 export const isEasyWin = (r: MatchResult) => isCandidate(r) && r.adminBurden === "low" && !r.solicitation.listingOnly && !sizeCheck(r);
 export const isLarger = (r: MatchResult) => isOpen(r) && tradeMet(r) && sizeCheck(r);
 export const isBlocked = (r: MatchResult) => isOpen(r) && r.classification.fit === "poor" && tradeMet(r);
+/** A stated set-aside, preference, directed-spend or participation goal that a certification you listed satisfies. */
+export const isProgramMatch = (r: MatchResult) =>
+  isOpen(r) &&
+  r.evidence.some(
+    (e) =>
+      (e.ruleId === "certRequired" || e.ruleId === "certPreferred" || e.ruleId === "participationGoal") &&
+      e.status === "met" &&
+      !!e.requirementKey &&
+      PROGRAM_CERT_CODES.includes(e.requirementKey.replace(/^(cert|goal):/, "")),
+  );
 
 export const QUICK_PREDICATE: Record<Exclude<QuickFilter, "none">, (r: MatchResult) => boolean> = {
   closing: isClosingSoon,
   easy: isEasyWin,
   larger: isLarger,
   blocked: isBlocked,
+  programs: isProgramMatch,
 };
 
 export const QUICK_META: Record<QuickFilter, { subtitle: string; empty: string }> = {
@@ -64,6 +76,7 @@ export const QUICK_META: Record<QuickFilter, { subtitle: string; empty: string }
   easy: { subtitle: "Lighter paperwork, our estimate: no bonds, no mandatory meetings, a short document list, and a size in your usual range.", empty: "No light-paperwork matches right now." },
   larger: { subtitle: "Your trade, but bigger than you said you usually take. Size is not an eligibility rule; teaming or subcontracting is common.", empty: "Nothing above your usual contract size." },
   blocked: { subtitle: "These fit what you do, yet one stated requirement is missing from your profile. Open one to see what it would take.", empty: "No blocked matches. Nice." },
+  programs: { subtitle: "Postings that state a set-aside, preference, directed-spend rule or participation goal which a certification you listed satisfies. Each card names the mechanism.", empty: "No open posting states a program that one of your listed certifications satisfies." },
 };
 
 export function buildDashboard(results: MatchResult[]): DashboardSections {

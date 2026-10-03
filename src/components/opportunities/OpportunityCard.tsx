@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { MatchResult } from "@/lib/data/types";
 import { CATEGORY_LABELS } from "@/lib/data/types";
 import { agencyFor } from "@/lib/data/agencies";
-import { BurdenTag, DeadlineChip, EntityMark, FitBadge, Money, RECOMMENDATION_META, SourceTag } from "@/components/ui";
+import { BurdenTag, DeadlineChip, EntityMark, FitBadge, MechanismBadges, Money, RECOMMENDATION_META, SourceTag } from "@/components/ui";
 import { useLanguage } from "@/state/language";
 import { FitScorePanel } from "./FitScorePanel";
 
-export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResult; today: string; showAgency?: boolean }) {
+export function OpportunityCard({ r, today, showAgency = true, extra }: { r: MatchResult; today: string; showAgency?: boolean; extra?: ReactNode }) {
   const { t } = useLanguage();
   const s = r.solicitation;
   const c = r.classification;
@@ -21,6 +22,7 @@ export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResul
       <div className="flex flex-wrap items-center gap-2">
         <FitBadge fit={c.fit} verifyCount={c.verify.length} closed={closed} size="sm" />
         <DeadlineChip due={s.dates.submissionDue} today={today} size="sm" />
+        {extra}
         <span className="ml-auto">
           <SourceTag source={s.provenance.source} listingOnly={s.listingOnly} />
         </span>
@@ -40,6 +42,7 @@ export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResul
         </p>
       </div>
       <p className="text-sm text-ink/90">{s.summary}</p>
+      <MechanismBadges sol={s} />
       <FitScorePanel match={r} variant="compact" />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted pt-1 border-t border-line mt-auto">
         <span>{CATEGORY_LABELS[s.category]}</span>

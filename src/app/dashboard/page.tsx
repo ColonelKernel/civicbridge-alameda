@@ -13,6 +13,11 @@ import { CredibilityCard } from "@/components/dashboard/CredibilityCard";
 import { ProfileSummaryBar } from "@/components/dashboard/ProfileSummaryBar";
 import { DemoProfilePicker } from "@/components/profile/DemoProfilePicker";
 import { Callout, Disclosure, SectionHeading } from "@/components/ui";
+import { SOLICITATIONS } from "@/lib/data/solicitations";
+import { cosine, getCorpusIndex, vectorizeText } from "@/lib/engine/similarity";
+
+const PROMPTS = ["after-hours electrical work in occupied buildings", "janitorial and floor care for public buildings", "Spanish interpretation and document translation", "landscaping and tree care on County grounds", "IT help desk and network support"];
+
 
 const CHIPS: { quick: QuickFilter; label: StringKey }[] = [
   { quick: "none", label: "chip.all" },
@@ -20,16 +25,34 @@ const CHIPS: { quick: QuickFilter; label: StringKey }[] = [
   { quick: "easy", label: "chip.easy" },
   { quick: "larger", label: "chip.larger" },
   { quick: "blocked", label: "chip.blocked" },
+  { quick: "programs", label: "chip.programs" },
 ];
 
 export default function DashboardPage() {
   const { hydrated, profile, results, resultById, todayISO, pasted } = useProfile();
   const { t } = useLanguage();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [query, setQuery] = useState("");
+  const [applied, setApplied] = useState("");
 
   const dash = useMemo(() => buildDashboard(results), [results]);
   const departments = useMemo(() => Array.from(new Set(results.map((r) => r.solicitation.department))).sort(), [results]);
-  const filtered = useMemo(() => sortForList(applyFilters(results, filters), filters.quick), [results, filters]);
+  // Free-text wording match: TF-IDF over the shipped corpus, computed in the browser; it re-orders the list and never changes a rule or a score.
+  const wording = useMemo(() => {
+    const q = applied.trim();
+    if (q.length < 3) return null;
+    const index = getCorpusIndex(SOLICITATIONS);
+    const qv = vectorizeText(index, q);
+    if (qv.terms.length === 0) return null;
+    const map = new Map<string, number>();
+    for (const r of results) map.set(r.solicitation.id, cosine(qv, index.vectorFor(r.solicitation)).value);
+    return map;
+  }, [applied, results]);
+  const filtered = useMemo(() => {
+    const base = sortForList(applyFilters(results, filters), filters.quick);
+    if (!wording) return base;
+    return [...base].sort((a, b) => (wording.get(b.solicitation.id) ?? 0) - (wording.get(a.solicitation.id) ?? 0));
+  }, [results, filters, wording]);
   const chipCounts = useMemo(
     () => Object.fromEntries(CHIPS.map((c) => [c.quick, applyFilters(results, { ...filters, quick: c.quick }).length])) as Record<QuickFilter, number>,
     [results, filters],
@@ -131,6 +154,50 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
+          <form
+            className="rounded-lg border border-line bg-cream/60 p-3 space-y-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setApplied(query);
+            }}
+          >
+            <label htmlFor="wording" className="text-sm font-medium text-ink block">
+              {t("match.title")}
+            </label>
+            <textarea
+              id="wording"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              rows={2}
+              placeholder="e.g. we rewire and relamp office buildings at night, mostly LED and controls"
+              className="w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-sm text-ink"
+            />
+            <div className="flex flex-wrap items-center gap-1.5">
+              {PROMPTS.map((p) => (
+                <button key={p} type="button" onClick={() => setQuery(p)} className="rounded-full bg-slate-soft px-2.5 py-0.5 text-xs text-ink hover:bg-line">
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="submit" className="rounded-full bg-ink px-3 py-1 text-sm text-white hover:bg-ink/90">
+                {t("match.button")}
+              </button>
+              {applied && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setApplied("");
+                  }}
+                  className="rounded-full border border-line bg-paper px-3 py-1 text-sm text-ink hover:bg-slate-soft"
+                >
+                  {t("match.clear")}
+                </button>
+              )}
+              <span className="text-xs text-muted">{t("match.hint")}</span>
+            </div>
+          </form>
           <details className="group">
             <summary className="text-sm text-green font-medium select-none cursor-pointer inline-flex items-center gap-1">
               <span aria-hidden className="group-open:hidden">▸</span>
@@ -151,9 +218,23 @@ export default function DashboardPage() {
           <p className="text-muted py-8 text-center">{QUICK_META[filters.quick].empty}</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {filtered.map((r) => (
-              <OpportunityCard key={r.solicitation.id} r={r} today={todayISO} />
-            ))}
+            {filtered.map((r) => {
+              const w = wording?.get(r.solicitation.id);
+              return (
+                <OpportunityCard
+                  key={r.solicitation.id}
+                  r={r}
+                  today={todayISO}
+                  extra={
+                    w !== undefined ? (
+                      <span className="rounded-full bg-cream px-2 py-0.5 text-xs text-ink/80 tabular-nums" title="Wording overlap with what you typed; not a requirement check">
+                        {Math.round(w * 100)}% wording match
+                      </span>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
           </div>
         )}
       </section>
