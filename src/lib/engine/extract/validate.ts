@@ -712,7 +712,7 @@ export function heuristicExtract(raw: string): ExtractionDraft {
   const exp = text.match(/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:\(\d+\)\s*)?(?:\+|or more)?\s*(?:consecutive\s+)?years?\b[^.\n]{0,60}?\b(?:experience|in business|providing|performing|operating)/i);
   if (exp && exp.index !== undefined) {
     const years = numberWord(exp[1]);
-    if (years) draft.experience = { years, description: "of relevant experience, as described in the text", quote: sentenceAround(text, exp.index) };
+    if (years) draft.experience = { years, description: "relevant experience, as the text describes it", quote: sentenceAround(text, exp.index) };
   }
   const staff = text.match(/(?:minimum|at least|no fewer than)\s+(?:of\s+)?(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty)\s*(?:\(\d+\)\s*)?(?:[\w-]+\s+){0,6}?(?:staff|employees|personnel|technicians|workers|crew|drivers|guards|interpreters)\b/i);
   if (staff && staff.index !== undefined) {

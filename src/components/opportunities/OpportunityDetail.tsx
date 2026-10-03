@@ -60,7 +60,7 @@ export function OpportunityDetail({ id }: { id: string }) {
       <header className="card p-5 sm:p-6 grid gap-5 lg:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           <p className="text-sm text-muted">
-            {sol.type} {sol.number} · {sol.department}
+            {sol.number.toUpperCase().startsWith(sol.type) ? sol.number : `${sol.type} ${sol.number}`} · {sol.department}
             {agency.shortName !== "County GSA" ? ` · ${agency.shortName}` : ""}
           </p>
           <h1 className="text-2xl sm:text-3xl font-semibold text-ink leading-tight mt-1">{sol.title}</h1>

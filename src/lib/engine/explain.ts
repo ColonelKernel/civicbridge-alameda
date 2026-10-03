@@ -60,7 +60,11 @@ export function buildSummary(sol: Solicitation, today: ISODate, match?: MatchRes
   const r = sol.requirements;
   for (const l of r.licenses) who.push({ text: `Licensed: ${l.label}.`, sourceRef: { field: "requirements.licenses", quote: l.quote } });
   for (const c of r.certifications.filter((c) => c.required)) who.push({ text: `Certified: ${c.label}.`, sourceRef: { field: "requirements.certifications", quote: c.quote } });
-  if (r.experience) who.push({ text: `At least ${r.experience.years} year${r.experience.years === 1 ? "" : "s"} ${r.experience.description}.`, sourceRef: { field: "requirements.experience", quote: r.experience.quote } });
+  if (r.experience) {
+    const desc = r.experience.description.trim().replace(/\.$/, "");
+    const text = /^\d/.test(desc) ? `At least ${desc}.` : `At least ${r.experience.years} year${r.experience.years === 1 ? "" : "s"} ${desc}.`;
+    who.push({ text, sourceRef: { field: "requirements.experience", quote: r.experience.quote } });
+  }
   if (r.location.type === "county-required") who.push({ text: `Located in Alameda County${r.location.note ? ` (${r.location.note.toLowerCase()})` : ""}.`, sourceRef: { field: "requirements.location", quote: r.location.quote } });
   if (r.location.type === "radius") who.push({ text: `Within ${r.location.radiusMiles} miles${r.location.note ? ` (${r.location.note})` : ""}.`, sourceRef: { field: "requirements.location", quote: r.location.quote } });
   if (r.statedStaffingMin) who.push({ text: `At least ${r.statedStaffingMin.count} staff for this contract.`, sourceRef: { field: "requirements.statedStaffingMin", quote: r.statedStaffingMin.quote } });

@@ -162,7 +162,7 @@ export default function PastePage() {
               </Callout>
               <div>
                 <p className="text-sm text-muted">
-                  {s.type} {s.number} · {s.department}
+                  {s.number.toUpperCase().startsWith(s.type) ? s.number : `${s.type} ${s.number}`} · {s.department}
                 </p>
                 <h2 className="text-xl font-semibold text-ink leading-snug">{s.title}</h2>
                 <p className="text-sm text-ink/85 mt-1">{s.summary}</p>
