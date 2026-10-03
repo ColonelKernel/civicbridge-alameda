@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate-data": "vitest run tests/data.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
