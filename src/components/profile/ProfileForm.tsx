@@ -3,24 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, CATEGORY_LABELS, INSURANCE_LABELS, INSURANCE_TYPES, type BusinessProfileInput, type Category, type InsuranceType } from "@/lib/data/types";
+import { CERT_GROUP_LABELS, CERTIFICATIONS, type CertGroup } from "@/lib/data/certifications";
 import { inferCategory } from "@/lib/engine/infer-category";
+import type { ProfileDraft } from "@/lib/engine/profile/extract";
 import { useProfile } from "@/state/profile";
-import { Button } from "@/components/ui";
+import { Button, Callout } from "@/components/ui";
 
-const CERT_OPTIONS = [
-  { code: "SLEB", label: "Alameda County SLEB certified" },
-  { code: "DIR", label: "DIR public works registration" },
-  { code: "SERVSAFE", label: "ServSafe / food protection manager" },
-  { code: "COURT_INTERPRETER", label: "Court interpreter certification" },
-  { code: "ATA", label: "ATA certified translator" },
-  { code: "MEDI_CAL_PROVIDER", label: "Medi-Cal certified provider" },
-  { code: "EVITP", label: "EVITP (EV charger installers)" },
-  { code: "ASE", label: "ASE certified technicians" },
-  { code: "BSIS_PPO", label: "BSIS private patrol operator" },
-  { code: "ISA_ARBORIST", label: "ISA certified arborist" },
-  { code: "RID", label: "RID / BEI (ASL)" },
-  { code: "QEI", label: "Qualified Elevator Inspector" },
-];
+const CERT_GROUPS: CertGroup[] = ["county-regional", "state-federal", "trade"];
 
 const SIZE_OPTIONS: { label: string; value: { min: number; max: number } | "unknown" }[] = [
   { label: "Under $25k", value: { min: 1_000, max: 25_000 } },
@@ -61,6 +50,91 @@ export function ProfileForm({ initial }: { initial?: Partial<BusinessProfileInpu
     return idx === -1 ? 4 : idx;
   });
   const [category, setCategory] = useState<Category | "">(initial?.primaryCategory ?? "");
+
+  // Autofill from a website or capability statement.
+  const [autoUrl, setAutoUrl] = useState("");
+  const [autoText, setAutoText] = useState("");
+  const [autoBusy, setAutoBusy] = useState(false);
+  const [autoError, setAutoError] = useState<string | null>(null);
+  const [autoResult, setAutoResult] = useState<{ filled: string[]; dropped: string[]; extractedBy: string; warning?: string; fetchedFrom?: string } | null>(null);
+
+  function applyDraft(d: ProfileDraft): string[] {
+    const filled: string[] = [];
+    if (d.name) {
+      setName(d.name);
+      filled.push("name");
+    }
+    if (d.description) {
+      setDescription(d.description);
+      filled.push("description");
+    }
+    if (d.city) {
+      setCity(d.city);
+      filled.push("city");
+    }
+    if (d.county) {
+      setCounty(d.county);
+      filled.push("county");
+    }
+    if (d.employeeCount !== null) {
+      setEmployees(String(d.employeeCount));
+      filled.push("employees");
+    }
+    if (d.yearsInBusiness !== null) {
+      setYears(String(d.yearsInBusiness));
+      filled.push("years");
+    }
+    if (d.capabilities.length) {
+      setCapabilities(d.capabilities.join(", "));
+      filled.push("services");
+    }
+    if (d.keywords.length) {
+      setKeywords(d.keywords.join(", "));
+      filled.push("keywords");
+    }
+    if (d.licenses.length) {
+      setLicenses(d.licenses.join(", "));
+      setLicensesKnown(true);
+      filled.push("licenses");
+    }
+    if (d.certifications.length) {
+      setCerts(Array.from(new Set(d.certifications)));
+      filled.push("certifications");
+    }
+    if (d.insurance.length) {
+      setInsurance(d.insurance.filter((i): i is InsuranceType => (INSURANCE_TYPES as readonly string[]).includes(i)));
+      setInsuranceKnown(true);
+      filled.push("insurance");
+    }
+    if (d.primaryCategory) {
+      setCategory(d.primaryCategory);
+      filled.push("trade");
+    }
+    return filled;
+  }
+
+  async function autofill() {
+    setAutoBusy(true);
+    setAutoError(null);
+    setAutoResult(null);
+    try {
+      const res = await fetch("/api/profile-extract", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: autoUrl.trim() || undefined, text: autoText }) });
+      const data = (await res.json()) as { draft?: ProfileDraft; dropped?: string[]; extractedBy?: string; warning?: string; fetchedFrom?: string; error?: string };
+      if (!res.ok || !data.draft) throw new Error(data.error ?? "Autofill failed.");
+      const filled = applyDraft(data.draft);
+      setAutoResult({ filled, dropped: data.dropped ?? [], extractedBy: data.extractedBy ?? "heuristic", warning: data.warning, fetchedFrom: data.fetchedFrom });
+    } catch (e) {
+      setAutoError(e instanceof Error ? e.message : "Autofill failed.");
+    } finally {
+      setAutoBusy(false);
+    }
+  }
+
+  function onAutoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    f.text().then((t) => setAutoText(t));
+  }
 
   const inference = useMemo(
     () =>
@@ -105,6 +179,44 @@ export function ProfileForm({ initial }: { initial?: Partial<BusinessProfileInpu
 
   return (
     <form onSubmit={submit} className="space-y-5">
+      <fieldset className="rounded-xl border border-dashed border-green/40 bg-green-soft/30 p-4">
+        <legend className="text-sm font-semibold px-1 text-green">Autofill from your website or capability statement</legend>
+        <p className="text-xs text-muted mb-2">
+          Give us a link, or paste the text of your capability statement. We pull out your trade, licenses, certifications, size and services, with a quote for each,
+          and you check every field before saving. Only this text is sent to the server.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <input className={input} value={autoUrl} onChange={(e) => setAutoUrl(e.target.value)} placeholder="https://your-business.com/about" aria-label="Website address" inputMode="url" />
+          <label className="inline-flex items-center justify-center rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink cursor-pointer hover:bg-slate-soft">
+            Upload .txt
+            <input type="file" accept=".txt,.md,text/plain" className="sr-only" onChange={onAutoFile} />
+          </label>
+        </div>
+        <textarea className={`${input} min-h-20 mt-2`} value={autoText} onChange={(e) => setAutoText(e.target.value)} placeholder="…or paste your capability statement, LinkedIn summary, or the About page here." aria-label="Capability statement text" />
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <Button type="button" variant="secondary" onClick={autofill} disabled={autoBusy || (!autoUrl.trim() && autoText.trim().length < 40)}>
+            {autoBusy ? "Reading…" : "Autofill the form"}
+          </Button>
+          <span className="text-xs text-muted">Runs through the same quote-verified extraction as pasted solicitations.</span>
+        </div>
+        {autoError && (
+          <p className="text-sm text-red mt-2" role="alert">
+            {autoError}
+          </p>
+        )}
+        {autoResult && (
+          <div className="mt-2">
+            <Callout tone={autoResult.filled.length ? "good" : "warn"} title={autoResult.filled.length ? `Filled ${autoResult.filled.length} field${autoResult.filled.length === 1 ? "" : "s"}: ${autoResult.filled.join(", ")}` : "Nothing we could verify"}>
+              <span className="text-xs">
+                {autoResult.extractedBy === "claude" ? "Read by Claude" : "Read by pattern matching"}
+                {autoResult.fetchedFrom ? ` from ${autoResult.fetchedFrom}` : ""}. Check each field below; anything without a verifiable quote was left out
+                {autoResult.dropped.length ? ` (${autoResult.dropped.join(", ")})` : ""}.{autoResult.warning ? ` ${autoResult.warning}` : ""}
+              </span>
+            </Callout>
+          </div>
+        )}
+      </fieldset>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={label} htmlFor="pf-name">
@@ -210,14 +322,20 @@ export function ProfileForm({ initial }: { initial?: Partial<BusinessProfileInpu
 
       <fieldset className="card p-4">
         <legend className="text-sm font-semibold px-1">Certifications you hold</legend>
-        <div className="grid gap-1.5 sm:grid-cols-2 mt-1">
-          {CERT_OPTIONS.map((c) => (
-            <label key={c.code} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={certs.includes(c.code)} onChange={(e) => setCerts((prev) => (e.target.checked ? [...prev, c.code] : prev.filter((x) => x !== c.code)))} />
-              {c.label}
-            </label>
-          ))}
-        </div>
+        <p className="text-xs text-muted mt-1">Tick only what you currently hold. We show it as self-reported; the Passport page maps it onto each buyer&apos;s program.</p>
+        {CERT_GROUPS.map((g) => (
+          <div key={g} className="mt-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{CERT_GROUP_LABELS[g]}</h4>
+            <div className="grid gap-1.5 sm:grid-cols-2 mt-1">
+              {CERTIFICATIONS.filter((c) => c.group === g).map((c) => (
+                <label key={c.code} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={certs.includes(c.code)} onChange={(e) => setCerts((prev) => (e.target.checked ? [...prev, c.code] : prev.filter((x) => x !== c.code)))} />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
       </fieldset>
 
       <fieldset className="card p-4">

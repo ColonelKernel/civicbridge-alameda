@@ -86,7 +86,7 @@ export default function PastePage() {
         <p className="text-sm font-medium text-green mb-2">Paste a solicitation</p>
         <h1 className="text-3xl sm:text-4xl font-semibold text-ink tracking-tight">Found one we don&apos;t track? Paste it in.</h1>
         <p className="text-muted mt-3 max-w-2xl">
-          Paste the text of any solicitation (a PDF&apos;s text, an email, a portal page). We turn it into the same plain-English summary, fit check
+          Paste the text of any solicitation (a PDF&apos;s text, an email, a portal page). We turn it into the same summary in your language, fit check
           and dated checklist as the built-in ones. Only facts we can quote back from your text are kept.
         </p>
       </header>

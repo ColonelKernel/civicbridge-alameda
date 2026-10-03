@@ -27,13 +27,13 @@ const entries: GlossaryEntry[] = [
     term: "SLEB certification (Small, Local and Emerging Business)",
     aliases: ["SLEB", "small local emerging business"],
     meaning:
-      "Alameda County's program for small businesses with a real office in the County. In current County RFPs a certified SLEB gets up to a 10% bid preference on procurements over $25,000 (5% for being local plus 5% for being small or emerging). Bidders that are not certified must usually subcontract at least 20% of the bid to a certified SLEB, or take a written exception on the Exceptions form.",
+      "Alameda County's program for small businesses with a real office in the County. In current County RFPs a certified SLEB gets up to a 10% bid preference on procurements over $25,000 (5% for being local plus 5% for being small or emerging); confirm the current percentages on the County SLEB page. Bidders that are not certified must usually subcontract at least 20% of the bid to a certified SLEB, or take a written exception on the Exceptions form.",
     action:
       "Apply through the County SLEB program (Auditor-Controller SLEB Certification Unit, OCCR@acgov.org). You will need proof of your office address, business license and recent tax returns. Certification must be valid when you submit, so start early. Not being certified does not stop you from bidding.",
     leadTime: "weeks",
     leadTimeDays: 30,
     gate: "no",
-    link: "https://gsa.acgov.org/do-business-with-us/vendor-support/small-local-and-emerging-businesses/",
+    link: "https://sleb.alamedacountyca.gov/",
   },
   {
     key: "program:SLEB_SUBCONTRACT",
@@ -45,7 +45,7 @@ const entries: GlossaryEntry[] = [
     leadTime: "weeks",
     leadTimeDays: 14,
     gate: "form",
-    link: "https://gsa.acgov.org/do-business-with-us/vendor-support/small-local-and-emerging-businesses/",
+    link: "https://sleb.alamedacountyca.gov/",
   },
   {
     key: "registration:COUNTY_VENDOR",
@@ -390,7 +390,7 @@ const entries: GlossaryEntry[] = [
     term: "Minimum years in business",
     meaning:
       "Most County RFPs require that you have been 'regularly and continuously engaged' in the same kind of work for a set number of years, shown in the Minimum Qualifications table of Exhibit A.",
-    action: "Count only years doing this specific kind of work. If you fall short, ask about subcontracting to a prime that qualifies.",
+    action: "Count only years doing this specific kind of work. If you fall short, ask about subcontracting to a prime that meets it.",
     leadTime: "n/a",
     gate: "yes",
   },

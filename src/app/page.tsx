@@ -1,90 +1,77 @@
+import Link from "next/link";
 import { DemoProfilePicker } from "@/components/profile/DemoProfilePicker";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { Hero } from "@/components/home/Hero";
 import { SOLICITATIONS } from "@/lib/data/solicitations";
-import { AGENCIES } from "@/lib/data/agencies";
+import { AGENCIES, GOVERNANCE_LABELS, type Governance } from "@/lib/data/agencies";
+import { BRAND } from "@/lib/data/brand";
+import { Disclosure, EntityMark, Eyebrow } from "@/components/ui";
+
+const STRIP_ORDER: Governance[] = ["county-department", "city", "regional", "special-district", "jpa", "authority", "school-district", "state", "federal"];
+const STRIP_LIMIT = 18;
 
 export default function Home() {
   const open = SOLICITATIONS.filter((s) => s.status === "open").length;
   const portal = SOLICITATIONS.filter((s) => s.provenance.source === "portal").length;
+  const strip = STRIP_ORDER.flatMap((g) => AGENCIES.filter((a) => a.governance === g).slice(0, g === "city" ? 6 : 3)).slice(0, STRIP_LIMIT);
   return (
-    <div className="mx-auto max-w-6xl px-4">
-      <section className="py-12 sm:py-16 grid gap-10 lg:grid-cols-[1.1fr_1fr] items-start">
-        <div>
-          <p className="text-sm font-medium text-green mb-3">For small businesses in Alameda County</p>
-          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-ink leading-[1.05]">
-            Government contracting, finally in plain English.
-          </h1>
-          <p className="mt-5 text-lg text-muted max-w-xl">
-            Tell us what your business does. We&apos;ll show you which County and local-agency contracts actually fit, why they fit,
-            what you&apos;d need to qualify, and exactly what to do before each deadline.
-          </p>
-          <dl className="mt-8 grid grid-cols-3 gap-4 max-w-md">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted">Open opportunities</dt>
-              <dd className="text-2xl font-semibold text-ink">{open}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted">From real postings</dt>
-              <dd className="text-2xl font-semibold text-ink">{portal}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted">Agencies tracked</dt>
-              <dd className="text-2xl font-semibold text-ink">{AGENCIES.length}</dd>
-            </div>
-          </dl>
+    <div>
+      <section className="hero-wash">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+          <Hero open={open} portal={portal} buyers={AGENCIES.length} />
           <div className="mt-10">
             <h2 className="text-base font-semibold text-ink">Try it as…</h2>
             <p className="text-sm text-muted mb-3">Pick a demo business and jump straight to its matches.</p>
             <DemoProfilePicker />
           </div>
-        </div>
-        <div className="card p-6">
-          <h2 className="text-xl font-semibold text-ink">Or describe your own business</h2>
-          <p className="text-sm text-muted mt-1 mb-5">Seven quick questions. Skip what you don&apos;t know; we&apos;ll flag it instead of guessing.</p>
-          <ProfileForm />
-        </div>
-      </section>
-
-      <section className="card p-6 mb-8 grid gap-5 lg:grid-cols-[1.2fr_1fr] items-center">
-        <div>
-          <p className="text-sm font-medium text-green mb-1">Part of CivicBridge</p>
-          <h2 className="text-2xl font-semibold text-ink">One County workspace, four services</h2>
-          <p className="text-muted mt-2">
-            BidPath is the procurement engine. The CivicBridge prototype shows where it sits: a countywide contract finder with a stated-SLEB
-            filter and a sample bid card with cited evidence and a quote builder, next to a whole-person service timeline, an explainable
-            housing-project rubric, and a housing-investment mix tool. Demo data only.
-          </p>
-          <a href="/civicbridge.html" className="inline-flex items-center gap-2 mt-4 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90">
-            Open the County workspace demo →
-          </a>
-        </div>
-        <ul className="grid grid-cols-2 gap-3 text-sm">
-          {[
-            { t: "Procurement", d: "Contract finder, SLEB preference filter, sample bid card, quote draft, calendar export." },
-            { t: "Whole-person view", d: "Source-labelled service timeline with example access scopes." },
-            { t: "Housing pipeline", d: "Published rubric, scoring evidence, shortlist and review packet export." },
-            { t: "Housing investment", d: "Adjust a funding mix and compare estimated homes by income band." },
-          ].map((m) => (
-            <li key={m.t} className="rounded-xl border border-line bg-paper p-3">
-              <div className="font-semibold text-ink">{m.t}</div>
-              <div className="text-muted mt-0.5">{m.d}</div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-3 pb-8">
-        {[
-          { t: "Which ones fit, and why", d: "Every match shows its evidence: the license they ask for, the size, the location, the certification you haven't listed. No mystery score." },
-          { t: "What you'd need", d: "Requirements sorted into what you appear to meet, what to check, and what's missing, each with a plain explanation and a next step." },
-          { t: "What to do, by when", d: "A dated checklist from the solicitation itself: register, attend the mandatory meeting, gather documents, submit by 2:00 p.m." },
-        ].map((f) => (
-          <div key={f.t} className="card p-5">
-            <h3 className="font-semibold text-ink">{f.t}</h3>
-            <p className="text-sm text-muted mt-1">{f.d}</p>
+          <div className="mt-6">
+            <Disclosure id="describe" summary="Describe your own business" className="scroll-mt-24">
+              <p className="text-sm text-muted mb-4">
+                Seven quick questions, or autofill from your website or capability statement. Skip what you don&apos;t know; we flag it instead of guessing.
+                Nothing leaves your browser except the text you choose to autofill from.
+              </p>
+              <ProfileForm />
+            </Disclosure>
           </div>
-        ))}
+        </div>
       </section>
+
+      <div className="mx-auto max-w-6xl px-4 space-y-8 pb-8">
+        <section aria-labelledby="buyers-title">
+          <Eyebrow>Buyers we cover</Eyebrow>
+          <h2 id="buyers-title" className="font-display text-2xl font-semibold text-ink">
+            Alameda County, its 14 cities, and the East Bay agencies around them
+          </h2>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {strip.map((a) => (
+              <li key={a.id} className="card px-3 py-2">
+                <EntityMark agency={a} showGovernance />
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted mt-3">
+            {AGENCIES.length - strip.length} more, grouped by {Object.keys(GOVERNANCE_LABELS).length} kinds of buyer, on{" "}
+            <Link href="/sources" className="text-green underline">
+              Where we look
+            </Link>
+            . Agency names identify where postings live; {BRAND.product} is not affiliated with any of them.
+          </p>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-3">
+          {[
+            { t: "Which ones fit, and why", d: "Every match shows its evidence: the license they ask for, the size, the location, the certification you haven't listed. No mystery score." },
+            { t: "Bid Effort Fit", d: "A 0 to 100 effort guide with every point explained, a separate confidence level, and the exact quote when something blocks you." },
+            { t: "What to do, by when", d: "A dated checklist from the solicitation itself: register, attend the mandatory meeting, gather documents, submit by 2:00 p.m." },
+          ].map((f) => (
+            <div key={f.t} className="card p-5">
+              <h3 className="font-semibold text-ink">{f.t}</h3>
+              <p className="text-sm text-muted mt-1">{f.d}</p>
+            </div>
+          ))}
+        </section>
+
+      </div>
     </div>
   );
 }

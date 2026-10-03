@@ -8,14 +8,16 @@ import { buildChecklist } from "@/lib/engine/checklist";
 import { agencyFor } from "@/lib/data/agencies";
 import type { CivicDate } from "@/lib/data/types";
 import { countdownLabel, formatCivic, urgency } from "@/lib/engine/dates";
-import { BurdenTag, Callout, DeadlineChip, FitBadge, SectionHeading, SourceTag } from "@/components/ui";
-import { FitEvidence, GapAnalysis } from "./EvidencePanel";
+import { BurdenTag, Callout, DeadlineChip, EntityMark, FitBadge, SectionHeading, SourceTag } from "@/components/ui";
+import { useLanguage } from "@/state/language";
+import { FitScorePanel } from "./FitScorePanel";
 import { PlainSummary } from "./PlainSummary";
 import { ChecklistView } from "./ChecklistView";
 import { SourcePanel } from "./SourcePanel";
 
 export function OpportunityDetail({ id }: { id: string }) {
   const { hydrated, profile, resultById, allSolicitations, todayISO, ticks, toggleTick } = useProfile();
+  const { t } = useLanguage();
   const sol = allSolicitations.find((s) => s.id === id);
   const match = resultById[id];
   const summary = useMemo(() => (sol ? buildSummary(sol, todayISO, match) : []), [sol, todayISO, match]);
@@ -49,7 +51,6 @@ export function OpportunityDetail({ id }: { id: string }) {
   const dueCls = closed ? "bg-slate-soft text-slate" : u === "critical" ? "bg-red-soft text-red" : u === "soon" ? "bg-amber-soft text-amber" : "bg-green-soft text-green";
   const agency = agencyFor(sol.agencyId);
   const next = nextMilestone(sol.dates, todayISO, due.date);
-  const blockers = match?.classification.blockers.filter((b) => b.ruleId !== "availability") ?? [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8 space-y-8">
@@ -59,10 +60,12 @@ export function OpportunityDetail({ id }: { id: string }) {
 
       <header className="card p-5 sm:p-6 grid gap-5 lg:grid-cols-[1fr_auto]">
         <div className="min-w-0">
-          <p className="text-sm text-muted">
-            {sol.number.toUpperCase().startsWith(sol.type) ? sol.number : `${sol.type} ${sol.number}`} · {sol.department}
-            {agency.shortName !== "County GSA" ? ` · ${agency.shortName}` : ""}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+            <EntityMark agency={agency} size="md" />
+            <span>
+              {sol.number.toUpperCase().startsWith(sol.type) ? sol.number : `${sol.type} ${sol.number}`} · {sol.department}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-ink leading-tight mt-1">{sol.title}</h1>
           <p className="text-ink/85 mt-2">{sol.summary}</p>
           <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -114,39 +117,21 @@ export function OpportunityDetail({ id }: { id: string }) {
           and this page will show the evidence for and against, plus what you would need.
         </Callout>
       )}
-      {blockers.length > 0 && (
-        <Callout tone="warn" title={closed ? "This one has closed" : "Something stands in the way"}>
-          <ul className="list-disc pl-5 space-y-1">
-            {blockers.map((b) => (
-              <li key={b.ruleId + b.label}>
-                <span className="font-medium">{b.label}.</span> {b.detail}
-                {b.action ? ` ${b.action}` : ""}
-              </li>
-            ))}
-          </ul>
-        </Callout>
-      )}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-8 min-w-0">
           {match && (
             <section>
-              <SectionHeading title="Does it fit?" subtitle="What the solicitation asks for, compared with what you told us. Nothing here is a legal determination; the County decides." />
-              <FitEvidence match={match} />
-            </section>
-          )}
-          {match && (
-            <section>
-              <SectionHeading title="What you'd need" subtitle="Credentials and conditions the solicitation states, sorted by where you stand." />
-              <GapAnalysis match={match} />
+              <SectionHeading title={t("section.fit")} subtitle={t("section.fit.sub")} />
+              <FitScorePanel match={match} variant="full" />
             </section>
           )}
           <section>
-            <SectionHeading title="In plain English" subtitle="Built only from the solicitation's own fields. Open any line to see the wording it came from." />
+            <SectionHeading title={t("section.summary")} subtitle={t("section.summary.sub")} />
             <PlainSummary sections={summary} />
           </section>
           <section>
-            <SectionHeading title="Your plan" subtitle="Dated steps, earliest first. Items say whether they come from the solicitation, from general County practice, or are our suggestion." />
+            <SectionHeading title={t("section.plan")} subtitle={t("section.plan.sub")} />
             <ChecklistView checklist={checklist} today={todayISO} ticks={ticks} toggleTick={toggleTick} />
           </section>
         </div>

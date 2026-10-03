@@ -17,6 +17,11 @@
   --slate-soft: #eef0f2;
   --blue: #1f4e8c;
   --blue-soft: #e6eef9;
+  /* Brand: County green meets Bay blue */
+  --bay: #1f5fa8;
+  --brand: #176b4a;
+  --brand-gradient: linear-gradient(135deg, var(--green) 0%, var(--bay) 100%);
+  --hero-wash: radial-gradient(1200px 420px at 10% -10%, rgb(23 107 74 / 0.12), transparent 60%), radial-gradient(900px 380px at 95% 0%, rgb(31 95 168 / 0.12), transparent 55%);
 }
 
 @theme inline {
@@ -35,7 +40,10 @@
   --color-slate-soft: var(--slate-soft);
   --color-blue: var(--blue);
   --color-blue-soft: var(--blue-soft);
+  --color-bay: var(--bay);
+  --color-brand: var(--brand);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-card: 1rem;
 }
@@ -62,6 +70,54 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   box-shadow: 0 1px 2px rgb(29 39 51 / 0.04);
+}
+
+/* A grid with no explicit column template gets one shrinkable column, so a long
+   non-wrapping chip can never widen a card past a phone-width viewport. */
+@layer components {
+  .grid {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72, "SOFT" 40;
+}
+
+.hero-wash {
+  background-image: var(--hero-wash);
+}
+
+.brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+/* Slide view for the Passport and print output: hide chrome, keep content. */
+html[data-slide="1"] header,
+html[data-slide="1"] footer,
+html[data-slide="1"] .no-print {
+  display: none;
+}
+
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
 }
 
 .prose-plain p + p {

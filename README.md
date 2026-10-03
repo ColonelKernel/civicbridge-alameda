@@ -1,11 +1,16 @@
-# BidPath · Alameda County contracts in plain English
+# ProcureFit · Alameda County and East Bay contracts, explained in your language
 
-A procurement opportunity navigator for small Alameda County businesses, built for the OTW 10X Hackathon challenge
+A procurement opportunity navigator for small businesses selling to Alameda County, its 14 cities and the East Bay
+agencies around them. Built for the OTW 10X Hackathon challenge
 **"Procurement: help small, local businesses find, understand and win County contracts."**
 
-Tell BidPath what your business does. It shows which County and local-agency solicitations fit, *why* they fit (with the
-solicitation's own words as evidence), what you would need to qualify, and exactly what to do before each deadline.
+Tell ProcureFit what your business does (or let it read your website or capability statement). It shows which
+solicitations fit, *why* they fit (with the solicitation's own words as evidence), how much effort a bid is likely to
+take, what you would need, and exactly what to do before each deadline, in any of the Bay Area's languages.
 It never decides eligibility; it compares what a solicitation says with what you told it, and says so.
+
+ProcureFit is an independent hackathon prototype. It is not affiliated with, or endorsed by, Alameda County or any
+agency it lists; agency names identify where opportunities are posted.
 
 ---
 
@@ -17,196 +22,249 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Pick a demo business (or describe your own) and you land on the dashboard.
+Open http://localhost:3000. Pick a demo business (or describe your own) and you land on the dashboard. Other pages:
+`/passport` (Regional SLEB Passport), `/paste` (paste a solicitation), `/sources` (where we look).
 
 Optional configuration (copy `.env.example` to `.env.local`):
 
 | Variable | Effect |
 |---|---|
-| `ANTHROPIC_API_KEY` | "Paste a solicitation" uses Claude for extraction. Without it, a deterministic pattern-based parser runs. Either way every extracted fact must quote the pasted text or it is dropped. |
+| `ANTHROPIC_API_KEY` | Turns on Claude for three server routes: solicitation extraction (`/api/extract`), profile autofill (`/api/profile-extract`) and translation of generated text (`/api/translate`). Without it, deterministic pattern-based extraction runs, autofill still works by pattern matching, and summaries stay in English while the interface labels still switch language. Every extracted fact must quote its source text or it is dropped, with or without the key. |
 | `NEXT_PUBLIC_DEMO_TODAY` | Pins "today" (YYYY-MM-DD) so deadlines and countdowns stay stable in a demo. The sample data is built around **2026-10-03**. Leave blank for the real date. |
 
 Checks:
 
 ```bash
-npm test            # 35 vitest tests: data integrity (T0) + engine (T1–T8) + extraction (T9)
+npm test            # 66 vitest tests: data, engine, fit score, similarity, passport, extraction, profile autofill
 npm run build       # Next.js production build
 npm run lint
+npm run fetch-attachments   # re-pull solicitation documents from the County (see §2)
 ```
 
-**Deploy (Vercel).** The app is a standard Next.js project; the only server piece is the extraction route. From the
-project directory:
+**Deploy (Vercel).** A standard Next.js project; the only server pieces are the three API routes. From the project
+directory:
 
 ```bash
 npx vercel deploy --prod --yes --build-env NEXT_PUBLIC_DEMO_TODAY=2026-10-03 --env NEXT_PUBLIC_DEMO_TODAY=2026-10-03
 ```
 
-Add `ANTHROPIC_API_KEY` in the Vercel project settings to turn on Claude extraction in production. Without a Vercel
-login, `npx vercel deploy --temporary` creates a claimable preview that lives for an hour.
+Add `ANTHROPIC_API_KEY` in the Vercel project settings to turn on Claude in production. Without a Vercel login,
+`npx vercel deploy --temporary` creates a claimable preview that lives for an hour.
 
-Stack: Next.js 16 (App Router, TypeScript, Tailwind v4), zod, vitest, `@anthropic-ai/sdk` (extraction route only).
-No database, no auth: the business profile, pasted solicitations and checklist ticks live in `localStorage`.
+Stack: Next.js 16 (App Router, TypeScript, Tailwind v4), zod, vitest, `@anthropic-ai/sdk` (server routes only).
+No database, no auth: the business profile, pasted solicitations, checklist ticks, language choice and translation
+cache live in `localStorage`. No vendor data is stored server-side.
 
 ---
 
 ## 2. Architecture
 
-Four layers, separated so any one can be swapped:
-
 ```
-src/lib/data/        DATA        schema (zod), 61 solicitations, 26-agency registry, glossary, synonyms, demo profiles
-src/lib/engine/      MATCHING    category inference, rules -> evidence, classification, dashboard sections, filters
-src/lib/engine/      EXPLAIN     explain.ts (six-section plain-language summary), checklist.ts (dated plan)
-src/lib/engine/extract/  PASTE   quote-verified extraction: Claude or heuristic -> shared materialize()
-src/app + components UI          landing/profile, dashboard, opportunity detail, paste, "where we look"
-src/state/profile.tsx            client state + localStorage; runs the engine on [pasted..., SOLICITATIONS]
-tests/                           vitest
+src/lib/data/            DATA      schema (zod), 61 solicitations, 51-buyer registry, programs, certifications, glossary, synonyms, brand
+src/lib/engine/          MATCHING  category inference, rules -> evidence, classification, fit-score, similarity, dashboard, passport
+src/lib/engine/          EXPLAIN   explain.ts (six-section summary), checklist.ts (dated plan)
+src/lib/engine/extract/  PASTE     quote-verified solicitation extraction: Claude or heuristic -> shared materialize()
+src/lib/engine/profile/  AUTOFILL  quote-verified profile extraction from a website or capability statement
+src/lib/engine/translate/          Claude translation of generated text (server only)
+src/lib/i18n/            LANGUAGE  dictionaries for the interface; locale list for the Bay Area
+src/app + components     UI        landing/profile, dashboard, opportunity detail, passport, paste, sources
+src/state/               STATE     profile.tsx (profile, pasted, ticks) and language.tsx (locale, translation cache)
+scripts/fetch-attachments.mjs      pulls solicitation documents into public/docs
+tests/                             vitest
 ```
 
-**Data model.** `Solicitation` is a zod schema (`src/lib/data/types.ts`) with structured fields the brief asks for:
-category + secondary categories, estimated value with its *basis* (total / annual / per-order / not-to-exceed pool),
-dates as `{date, time}` in Pacific time (pre-bid meeting with `mandatory` flag and optional prerequisite form,
-site visit, questions due, submission due, award), submission method, requirements (licenses, certifications
-with `required` vs preferred, insurance limits, location rule, experience, bonding, prevailing/living wage, DIR,
-stated minimum staffing, other), documents to submit, scope tags, contact, source URL, source excerpt, status,
-`listingOnly`, and `provenance` (curated / portal / pasted, extracted by human / claude / heuristic).
-Every requirement carries a `quote`; a test asserts each quote appears in its record's `sourceExcerpt`, which is the
-mechanical guarantee behind "never invent requirements".
+**Data model.** `Solicitation` is a zod schema (`src/lib/data/types.ts`): category and secondary categories, estimated
+value with its *basis*, dates as `{date, time}` (pre-bid meeting with `mandatory` flag and optional prerequisite,
+site visit, questions due, submission due, award), submission method, requirements (licenses, certifications with
+`required` vs preferred, insurance limits, location rule, experience, bonding, prevailing/living wage, DIR, stated
+minimum staffing, other), documents to submit, `attachments` (files copied into the portal) and `portalUrl`, scope
+tags, contact, source URL, source excerpt, status, `listingOnly`, and `provenance`. Every requirement carries a
+`quote`; a test asserts each quote appears in its record's `sourceExcerpt`.
 
-**Dataset (61 records, 26 agencies).**
-- 17 records read from real County solicitation packages (GSA, Health Care Services, Behavioral Health, Public Health,
-  Probation, Housing) with real numbers, dates, contacts, insurance limits, Exhibit A document lists and SLEB terms.
-- 32 curated records written in the same County format (fictional contacts at `@acgov.example`), spread across the
-  trades the brief names so every demo profile has strong, possible and blocked matches.
-- 12 listing-only records captured from other agencies' portals (Alameda CTC, HCD SHIFT, Superior Court, Office of
-  Education, East Bay Regional Park District, First 5, StopWaste). They are shown with a "listing only" tag and
-  their requirements are honestly empty.
-- `src/lib/data/agencies.ts` is a registry of 26 "technically Alameda County" buyers (departments, commissions,
-  County-governed districts, JPAs, courts, two regional agencies) with their procurement URL, platform, preference
-  program and the kind of ingest adapter each needs. The "Where we look" page renders it.
+**Dataset (61 records, 51 buyers).** 17 records read from real County solicitation packages, 32 curated records in
+the same County format (fictional contacts at `@acgov.example`), 12 listing-only records from other agencies'
+portals. `src/lib/data/agencies.ts` registers 51 buyers: 26 County departments, commissions, districts, JPAs,
+authorities and courts (links read on 2026-10-03), plus the 14 cities, BART, Port of Oakland, EBMUD, the City of
+Alameda housing authority, UC Berkeley, three school districts, Cal eProcure, Caltrans District 4 and SAM.gov. The
+added entries link to the official domain only and are marked *unchecked* with a look-up note until each bids page
+is read. Each agency has a `displayName`, the way it names itself, used everywhere a buyer appears.
 
-**Replacing the sample data with a real feed.** `src/lib/data/sources.ts` defines `SolicitationSource { load(): Promise<Solicitation[]> }`.
-The sample set is one source; `countyPortalSource` is a documented stub. A live adapter fetches a listing, runs each
-document through `engine/extract` (the same quote-verified pipeline the paste feature uses) and returns
-`parseSolicitations(records)`. Nothing downstream changes.
+**Solicitation documents in the portal.** `npm run fetch-attachments` maps each portal-sourced record to its County
+GSA bid page, downloads the agency's PDFs into `public/docs/<id>/` (files up to 15 MB; larger ones stay linked to the
+County site) and records any OpenGov project link. The detail page lists them under "Solicitation documents". As of
+2026-10-03 the County's current RFPs keep their documents inside the OpenGov portal, so most records carry the portal
+link; the legacy-portal RFPQ #23068 contributes five copied files and five linked ones.
 
-**CivicBridge workspace prototype** (`public/civicbridge.html`, served at `/civicbridge.html`, linked from the nav as
-"County workspace"). A single-file HTML prototype of the wider County workspace BidPath belongs to: a countywide
-contract finder with category / supplier / area filters and a stated-SLEB-preference quick filter, a sample bid card
-with tabbed scope, dates, requirements and an eligibility check whose facts cite page-level evidence, a quote builder
-with downloadable draft and calendar export, a whole-person service timeline with example sharing scopes, an
-explainable housing-project rubric with shortlist and review-packet export, and a housing-investment mix tool. All of
-its data is synthetic and labelled as such. It links into BidPath ("Open BidPath matching") and BidPath links back.
-
-**UI.** Cream/green/amber palette, conversational copy, semantic HTML, keyboard-reachable filters, mobile layout.
-The detail page is client-rendered so pasted solicitations (browser-only) behave exactly like built-in ones.
+**Replacing the sample data with a real feed.** `src/lib/data/sources.ts` defines `SolicitationSource`. A live
+adapter fetches a listing, runs each document through `engine/extract` and returns `parseSolicitations(records)`.
 
 ---
 
 ## 3. Matching methodology
 
-Deterministic, explainable, and honest about what it does not know. No opaque score is ever shown.
+Deterministic, explainable, and honest about what it does not know.
 
-**Category inference** (`infer-category.ts`): declared trade → licenses (C-10 → electrical, C-36 → plumbing, B →
-general construction, …) → certifications (ServSafe → food, court interpreter → translation) → synonym scoring of the
-name, description, capabilities and keywords. Low-confidence results are shown as an editable chip ("We guessed your
-trade as…") instead of being treated as fact.
+**Category inference, synonym matching, rules → evidence, classification, paperwork effort, explanation, checklist
+and paste-a-solicitation** work as before: each rule returns `Evidence` with a status (met / check / missing /
+unknown / na), a confidence (stated / inferred), a label, detail, action and a `sourceRef` (field + quote + url).
+`unknown` is never treated as `missing`. **Unlikely fit** if any gate rule is missing; **strong** if the trade match
+is primary-to-primary, nothing is missing, no gate rule is unknown, scope and size fit and the record is not
+listing-only; **possible** otherwise.
 
-**Synonym matching** (`synonyms.ts`): per-category strong (3) / weak (1) / negative (−3) phrases, whole-phrase regex
-tolerant of hyphens and suffixes. Negatives stop "cybersecurity" → security guards, "design-build" → graphic design,
-"Class B driver's license" → Class B contractor.
+### Bid Effort Fit (`src/lib/engine/fit-score.ts`, scoring v1.0.0)
 
-**Rules → evidence** (`rules.ts`). Each rule returns `Evidence` with a status, a confidence, a plain label and detail,
-an action, and a `sourceRef` (field + quote + url):
+An explainable 0 to 100 effort score built on top of the rules, which remain the authority on every requirement.
 
-| rule | class | notes |
+| Component | Max | What earns points |
 |---|---|---|
-| availability | gate | open and due date not passed |
-| tradeFit | gate | category intersection (profile primary/secondary vs solicitation primary/secondary/umbrella) or synonym score |
-| scopeCoverage | soft | multi-trade scope only partly covered → "you may need to team or sub" |
-| capabilityMatch | soft | the owner's capability phrases found in the text |
-| contractSize | soft | above the owner's usual band → *check*, worded "not an eligibility rule" |
-| location | gate when county-required | local preference → check for non-County businesses |
-| license / certRequired / experience / statedStaffing | gate | missing only when the profile *declares* it lacks the item |
-| certPreferred | soft | "you lose the preference, not eligibility" |
-| insurance | soft | never a blocker: certificates are due at award, brokers add coverage |
-| bonding, prevailingWage, livingWage, dirRegistration | soft | always a check item with glossary guidance |
-| mandatoryMeeting | gate when the meeting already happened | future mandatory meeting → check |
-| listingOnly | soft | "open the posting; requirements not read yet" |
+| Scope match | 35 | trade match by strength (8–20), capability match (+5), lexical similarity (0–10), minus 6 when the scope covers trades you lack |
+| Readiness | 35 | license 10, certifications and DIR 8, insurance 7, experience 5, staffing 5; met = full, check = half, unknown = 0; a requirement the solicitation does not state earns its full weight; listing-only records score 0 |
+| Commercial | 15 | contract size met 9 / unknown 4 / stretch 3; paperwork effort low 6 / medium 3 / high 0 |
+| Local & timing | 15 | location met 5 / none stated 4 / check 1; stated preference programs up to 4; days left 1–6 |
 
-Statuses: **met**, **check**, **missing**, **unknown** (the profile did not say; phrased "Tell us"), **na**.
-`unknown` is never treated as `missing`. Confidence is **stated** when the solicitation states the requirement and the
-owner's trade/credential was user- or license-sourced, otherwise **inferred**.
+- **Blocked** (no number): any gate rule the vendor affirmatively fails: closed, mandatory meeting already held,
+  wrong trade, county-required location, a declared missing license, certification, experience or staffing. The UI
+  shows the exact source quote in place of the number. Absent profile information is *unknown*: it lowers
+  confidence and never blocks.
+- **Confidence** is separate from the score: *low* for listing-only or thin text, two or more unknown gate
+  requirements, or a trade match that is not source-backed; *high* when every gate requirement, insurance and DIR
+  are answered; *medium* otherwise.
+- **Recommendation**: Strong fit (strong tier, score ≥ 70, not low confidence) · Worth a closer look ·
+  High verification effort (low confidence or score < 45) · Blocked as stated. A test rejects any label or detail
+  containing "eligible", "qualifies", "qualify", "will win" or "guaranteed".
+- **Lexical similarity** (`similarity.ts`): TF-IDF cosine between the solicitation text and the vendor's own
+  description, capabilities and keywords, computed in-process over the built-in corpus (memoized per corpus and per
+  record, deterministic summation). It feeds only the scope component, is capped at 10 points, and is computed after
+  blocking has been decided, so it can never override a rule. The UI calls it "wording overlap".
+- **Protected status is never a proxy for award odds.** The only path that awards points for a certification program
+  is the `certPreferred` rule, which fires only when the solicitation itself states the program as preferred, capped
+  at 4 of 100; nothing in the score reads the profile's certifications directly.
+- **Auditability**: every result carries `inputs` (evidence ids and statuses, the similarity value and shared terms,
+  which profile fields were declared) and `scoringVersion`. All of it stays in the browser.
+- The disclaimer on every panel: *Guidance only, not an eligibility determination or award prediction. The agency
+  decides after reading your full response.*
 
-**Classification** (`classify.ts`):
-- **Unlikely fit** if any gate rule is *missing* (the blockers are listed and explained).
-- **Looks like a strong fit** if the trade match is primary-to-primary (score ≥ 7), nothing is missing, no gate rule is
-  unknown, the scope is fully covered, the size is not a stretch and the record is not listing-only.
-- **Possible fit** otherwise, with "N things to verify".
-- A `fitScore` orders cards (trade +, size +, location +, per missing −, per check −) and is never displayed.
-- **Paperwork effort** (low/medium/high, labelled "our estimate") counts bonds, mandatory meetings, prevailing wage,
-  required certifications, document count and multi-trade scope.
+**Dashboard** (`dashboard.ts`): Top matches, then one filterable list with quick-filter chips that reuse the section
+predicates: All · Closing soon (candidates due within 14 days) · Easy wins (low paperwork, size in range, not listing
+only) · Larger (trade fits, size is a stretch) · Blocked (trade fits, one stated requirement missing). More filters
+(category, buyer, department, deadline, size, certification mentioned, match strength, show closed) sit behind a
+disclosure; "Requirements you commonly lack" and the Passport credibility card sit at the bottom.
 
-**Dashboard** (`dashboard.ts`): Top Matches (strong, backfilled with possible and labelled when fewer than three),
-Closing Soon (≤ 14 days), Easy Wins (low paperwork, size in range), Larger Opportunities (trade fits, size is a stretch:
-teaming/subcontracting wording), Your Trade But Blocked, and Requirements You Commonly Lack (evidence grouped by
-requirement key into Missing / Check these / Tell us, with glossary meaning, action and lead time). Filters: category,
-agency, department, deadline window, size bucket, certification mentioned, match strength, search, show closed.
+### Profile autofill (`src/lib/engine/profile/extract.ts`, `/api/profile-extract`)
 
-**Explanation** (`explain.ts`, `glossary.ts`): the six sections (What they need / How much / Who can bid / What you
-must submit / Important dates / Watch out) are generated only from structured fields, each line with a source
-reference. ~40 glossary entries (SLEB, DIR, prevailing wage, bonds, Exhibit A, insurance types, CSLB classes, …) give
-meaning, next action, lead time and whether lacking the item can stop a bid. Dollar/percentage figures are quoted
-from current County language and the UI says to confirm on the solicitation.
+Give a public web address or paste a capability statement (or upload a `.txt`). The server fetches the page (public
+http(s) only, 2 MB cap, HTML stripped to text), then Claude or the heuristic parser produce a draft profile: name,
+description, city and county (Alameda County cities recognized), headcount, years in business, services, NAICS
+keywords, CSLB license classes, certifications from the shared catalog, insurance types and the inferred trade. Every
+fact carries a quote; `verifyDraft()` drops anything whose quote is not in the text. The form is prefilled and the
+owner checks every field before saving.
 
-**Checklist** (`checklist.ts`): calendar-date arithmetic with County-holiday-aware business days. Groups: Get ready
-(2 business days before the first meeting, else 10 before the due date), clearance form, meetings (mandatory vs
-optional), questions, Prepare your response (3 business days before, one item per required document), Submit.
-Past prep groups collapse into "Do now"; a past mandatory meeting becomes a warning. Each item is tagged
-*from the solicitation* / *general County step* / *our suggestion*. Ticks persist per solicitation and date-hash.
+### Languages
 
-**Paste a solicitation** (`extract/`): Claude (structured output against the same zod draft schema) or the heuristic
-parser produce a *draft* in which every fact carries a verbatim quote. `materialize()` verifies each quote against the
-normalized text, drops anything unverifiable into `droppedExtractions` ("N items left out"), marks a meeting mandatory
-only if the quote says "mandatory", cross-checks the category with the synonym scorer, and records a missing due date
-instead of inventing one. The result is a normal `Solicitation`, so the engine, summary and checklist work unchanged.
-
-**Safeguards the UI enforces**: "appear to meet" rather than "eligible"; every evidence line distinguishes stated vs
-inferred; "Tell us" items are gaps in the profile, not the business; the footer and detail page say the County decides.
+The header toggle lists the Bay Area's languages as Alameda County lists them for language access. English, Spanish,
+Chinese (Traditional and Simplified), Vietnamese, Tagalog and Korean have hand-written interface dictionaries
+(`src/lib/i18n/strings.ts`). Farsi, Punjabi, Arabic, Hindi, Khmer, Tigrinya, Amharic, Japanese, Russian, Portuguese,
+Thai, Lao, Burmese and Mongolian get their interface strings from the live translation route and fall back to English
+without a server key. Generated text (summaries, evidence lines) is translated through `/api/translate` (Claude) and
+cached per language in the browser; the page always says *Machine translation. The English posting governs.*
+Right-to-left languages set the document direction. Spoken-only languages (Mien, Mam) have no written standard to
+render and are not listed.
 
 ---
 
-## 4. Three-minute demo script
+## 4. Regional SLEB Passport (`/passport`)
+
+Alameda County's SLEB program (small, local, emerging: up to a 10% preference, 20% SLEB subcontracting on larger
+contracts) is one of a dozen overlapping programs across the region. The Passport encodes them as data
+(`src/lib/data/programs.ts`) on a **shared status taxonomy**:
+
+| Status | Definition | Derived from (self-reported, unverified) |
+|---|---|---|
+| County-local | fixed office in Alameda County, business license, six months there | county on the profile |
+| City-local | located in the buying city under its own definition | city on the profile (14 cities) |
+| Small | at or under the SBA size standard | headcount ≤ 100 |
+| Emerging | small, under five years, ≤ half the SBA threshold (County SLEB) | headcount ≤ 50 and < 5 years |
+| Micro | DGS microbusiness | headcount ≤ 25 |
+| State-certified | DGS SB, MB, SB-PW, DVBE | a listed DGS certification |
+| Federal-certified | DBE, Section 3, WOSB, HUBZone, 8(a) | a listed federal certification |
+
+Programs: County SLEB, Alameda CTC LBCE (LBE/SLBE/VSLBE, local funds only), City of Oakland L/SLBE, Port of Oakland
+SBE/VSBE, AC Transit SBE/SLBE and DBE, BART SBE/MSBE/Local Small Business, EBMUD Contract Equity (accepts DGS SB/MB;
+7% discount), OUSD Local Business Utilization (2% discount; accepts County, Oakland, Port and Alameda CTC
+certifications for Oakland-based firms), UC Berkeley Small Business First, HACA Section 3, city preferences (Alameda
+5%, Berkeley 5%, Fremont 2.5% goods, San Leandro 10% up to $50k, Pleasanton 5% capped at $5k), California DGS
+SB/MB/DVBE, SAM.gov, the federal DBE program (October 2025 rule; California reevaluating), CPUC GO 156 and the East
+Bay Interagency Alliance common application (information-sharing, not reciprocal certification).
+
+For each program the page shows a **standing**: *Recognized* (you listed a certification the program issues or
+accepts; not verified), *Likely to apply* (your self-reported size and location match what it recognizes), *Not
+derivable from your profile* (ownership- or income-based, or a field is missing), *Not applicable* (outside its
+boundary). `src/lib/engine/passport.ts` is pure and tested.
+
+**Harmonization proposal.** One application and shared evidence → a common supplier profile with status codes →
+each agency applies its own boundary, funding lane and bid rule → a shared directory and outcome dashboard. The
+proposed **Regional SLEB alumni badge** (a supplier that held an active small-local certification for a full term,
+completed a public contract in good standing and has since outgrown the size threshold) would confer a portable,
+verifiable history, mentor/prime listing for subcontracting goals and inclusion in shared metrics. It would not confer
+any preference, set-aside, discount, certification or eligibility with any agency.
+
+**Legal guardrail.** California Constitution Art. I §31 (Prop 209; *Hi-Voltage Wire Works v. City of San Jose*) bars
+race- and sex-based preferences in public contracting. Every status here is based on size, location or age of the
+business; ownership-diversity information never changes a score, preference or standing in this tool.
+
+`/passport?slide=1` renders the same page as one 16:9 slide (header and footer hidden); the print stylesheet does the
+same for Cmd+P. Program pages whose URL was not read on 2026-10-03 are marked *unchecked link*: Oakland L/SLBE, Port
+SBE/VSBE, BART OCR, EBMUD Contract Equity, OUSD policy, UC Berkeley Small Business First, DGS OSDS, US DOT DBE, CPUC GO
+156, the Alliance page, and the city preference pages.
+
+---
+
+## 5. Naming and branding
+
+The product is **ProcureFit** (`src/lib/data/brand.ts`): a gradient mark from County green to Bay blue, a serif
+display face for headings, and a cream/green/amber/blue palette. Agencies are named the way they name themselves
+(`Agency.displayName`) and shown as text marks tinted by kind of buyer (county, city, regional, school district,
+state, federal). No agency seal or logo is reproduced; the footer states non-affiliation.
+
+---
+
+## 6. Three-minute demo script
 
 | time | what to do | what to say |
 |---|---|---|
 | 0:00 | Landing page. Click **Hernández Electric** (⚡). | "An East Oakland electrician with 12 people, a C-10 license, no SLEB certification, and no idea where County work is posted." |
-| 0:20 | Dashboard. Point at **Top matches** cards. | "Every card says *why*: license matches, DIR registered, size in range. Strong, possible, unlikely, never a mystery score." Scroll to **Closing soon** (the data cabling job due Oct 16) and **Requirements you commonly lack**: SLEB and insurance show up as *Tell us* / *Check these*. |
-| 0:50 | Open **LED lighting retrofit** (top match). | Deadline header: due date, countdown, and "Next: mandatory pre-bid meeting Oct 14". **Does it fit?** rows are tagged *stated* or *inferred*. **What you'd need**: three columns, appear to meet / check these / missing. Click "Where it says this" to show the quote. |
-| 1:30 | Scroll to **In plain English** and **Your plan**. Tick two checklist items. Reload. | "Six sections in everyday words, each traceable to the solicitation. The plan is dated with County holidays and business days. Ticks stay on this device." |
-| 1:50 | Back. Open **Your trade, but something blocks it** → the as-needed electrical contract. | "Mandatory job walk already happened. We say you can no longer bid, and why, instead of hiding it in page 12." |
-| 2:10 | Header "change business" → pick **Puente Language Services**. | "Same engine, different owner. Electrical jobs vanish; the interpretation RFP is the strong fit, with court-certification evidence." |
-| 2:30 | **Paste a solicitation** → *Try a sample* → *Extract*. | "Any solicitation, from any agency. Every extracted fact must quote the text, and the two we could not verify are listed as *left out*, not guessed." Add it, show the banner and the quotes. |
-| 2:55 | **Where we look**. | "The County isn't one buyer: 26 departments, commissions, districts and authorities, centralized, each tagged with the adapter a live feed needs." |
+| 0:20 | Dashboard. Point at the score chips on **Top matches**, then the quick-filter chips. | "Every card carries a Bid Effort Fit score with its confidence, and the reasons. One list, five chips: closing soon, easy wins, larger, blocked." |
+| 0:50 | Open **LED lighting retrofit**. | "83 out of 100, worth the effort. Four bars say where the points come from. Check-before-you-commit and Tell-us lists, each line with the quote." Switch the language toggle to Español. |
+| 1:30 | Scroll to **In your language** and **Your plan**. Tick two checklist items. Reload. | "Six sections, traceable to the solicitation. The plan is dated with County holidays. Ticks stay on this device." |
+| 1:50 | Back. Chip **Blocked** → the as-needed electrical contract. | "Mandatory job walk already happened. Blocked as stated, and the quote replaces the number." |
+| 2:10 | Header "change business" → **Bayline Builders**. Open **SLEB Passport**. | "Fremont GC, SLEB certified. Recognized by the County, likely to apply for Fremont's preference, not applicable in Oakland. The proposal: one application, one alumni badge, each agency keeps its rule." Click **Print / slide view**. |
+| 2:40 | **Describe your own business** → paste a capability statement → **Autofill**. | "Website or capability statement in, profile out, every field with a quote." |
+| 2:55 | **Where we look**. | "51 buyers: the County, 14 cities, BART, the Port, EBMUD, school districts, state and federal entry points." |
 
 ---
 
-## 5. With two more hours
+## 7. With two more hours
 
-**Wire the first live source.** `SolicitationSource` and the quote-verified extraction pipeline already exist; what is
-missing is one adapter: fetch the County GSA contracting-opportunities HTML listing (plain HTML, fetchable today),
-download each solicitation's DOCX/PDF, convert to text, run `extractWithClaude` → `materialize()`, and cache the
-validated records with a nightly refresh. That single change turns the demo into a tool a business can check every
-Monday, and it exercises nothing new: the paste feature is that pipeline for one document. Second choice, if the
-feed is out of reach: per-owner rephrasing of the six-section summary into the owner's own language (Spanish,
-Cantonese, Vietnamese) with Claude, keeping the source quotes in English beside it.
+**Wire the first live source.** `SolicitationSource`, the quote-verified extraction pipeline and the attachment
+fetcher already exist; what is missing is one adapter that walks the County GSA listing, reads each document and
+returns `parseSolicitations(records)` on a nightly refresh. Second choice: an OpenGov adapter, since that is where
+the County's current documents live.
+
+**Phase 2 similarity (design note, deferred).** Replace TF-IDF with embeddings only if it measurably improves
+ordering on the demo corpus. Design: an embedding provider called server-side with explicit consent per profile, no
+retention of vendor text beyond the request, precomputed solicitation vectors shipped with the dataset, the same
+10-point cap and the same rule that similarity never overrides a hard requirement.
 
 ---
 
 ## Known limitations
 
-- The dataset is a mix of real and curated records; curated contacts are fictional and marked "sample".
-- Listing-only records (other agencies' portals) have no requirements until a document is read.
-- The heuristic parser handles the common County layout; unusual formats need the Claude path.
-- Profile, pasted records and ticks are per-browser (`localStorage`). No PDF upload yet (paste the text).
+- The dataset mixes real and curated records; curated contacts are fictional and marked "sample".
+- Listing-only records have no requirements until a document is read; the County's current RFP documents live
+  inside OpenGov and are linked, not copied.
+- Passport status tags are heuristics from headcount, years and city; program rules are summaries that change.
+  Unchecked links are marked.
+- Interface dictionaries beyond the first seven languages come from live translation; everything non-English says
+  the English posting governs.
+- Profile, pasted records, ticks and language are per-browser (`localStorage`). No PDF upload yet (paste the text).
 - Demo dates assume today is 2026-10-03 (`NEXT_PUBLIC_DEMO_TODAY`).

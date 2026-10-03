@@ -34,8 +34,40 @@ const byScoreThenDate = (a: MatchResult, b: MatchResult) =>
 
 const byDate = (a: MatchResult, b: MatchResult) => a.classification.daysUntilDue - b.classification.daysUntilDue;
 
+// ---------------------------------------------------------------------------
+// Quick filters: the same predicates drive the dashboard sections and the chips
+// over the single list, so a chip always shows exactly what its section did.
+// ---------------------------------------------------------------------------
+
+export type QuickFilter = "none" | "closing" | "easy" | "larger" | "blocked";
+
+const isOpen = (r: MatchResult) => r.classification.availability === "open";
+const isCandidate = (r: MatchResult) => isOpen(r) && r.classification.fit !== "poor";
+const tradeMet = (r: MatchResult) => r.evidence.some((e) => e.ruleId === "tradeFit" && e.status === "met");
+const sizeCheck = (r: MatchResult) => r.evidence.some((e) => e.ruleId === "contractSize" && e.status === "check");
+
+export const isClosingSoon = (r: MatchResult) => isCandidate(r) && r.classification.daysUntilDue >= 0 && r.classification.daysUntilDue <= 14;
+export const isEasyWin = (r: MatchResult) => isCandidate(r) && r.adminBurden === "low" && !r.solicitation.listingOnly && !sizeCheck(r);
+export const isLarger = (r: MatchResult) => isOpen(r) && tradeMet(r) && sizeCheck(r);
+export const isBlocked = (r: MatchResult) => isOpen(r) && r.classification.fit === "poor" && tradeMet(r);
+
+export const QUICK_PREDICATE: Record<Exclude<QuickFilter, "none">, (r: MatchResult) => boolean> = {
+  closing: isClosingSoon,
+  easy: isEasyWin,
+  larger: isLarger,
+  blocked: isBlocked,
+};
+
+export const QUICK_META: Record<QuickFilter, { subtitle: string; empty: string }> = {
+  none: { subtitle: "All opportunities we track, filtered however you like.", empty: "No opportunities match these filters." },
+  closing: { subtitle: "Due within 14 days. Mandatory meetings and questions deadlines may be sooner than the due date.", empty: "Nothing that fits you closes in the next two weeks." },
+  easy: { subtitle: "Lighter paperwork, our estimate: no bonds, no mandatory meetings, a short document list, and a size in your usual range.", empty: "No light-paperwork matches right now." },
+  larger: { subtitle: "Your trade, but bigger than you said you usually take. Size is not an eligibility rule; teaming or subcontracting is common.", empty: "Nothing above your usual contract size." },
+  blocked: { subtitle: "These fit what you do, yet one stated requirement is missing from your profile. Open one to see what it would take.", empty: "No blocked matches. Nice." },
+};
+
 export function buildDashboard(results: MatchResult[]): DashboardSections {
-  const open = results.filter((r) => r.classification.availability === "open");
+  const open = results.filter(isOpen);
   const candidates = open.filter((r) => r.classification.fit !== "poor");
   const strong = candidates.filter((r) => r.classification.fit === "strong").sort(byScoreThenDate);
   const possible = candidates.filter((r) => r.classification.fit === "possible").sort(byScoreThenDate);
@@ -47,28 +79,10 @@ export function buildDashboard(results: MatchResult[]): DashboardSections {
     backfilled = possible.length > 0 && strong.length < 3;
   }
 
-  const closingSoon = candidates
-    .filter((r) => r.classification.daysUntilDue >= 0 && r.classification.daysUntilDue <= 14)
-    .sort(byDate);
-
-  const easyWins = candidates
-    .filter((r) => r.adminBurden === "low" && !r.solicitation.listingOnly)
-    .filter((r) => {
-      const size = r.evidence.find((e) => e.ruleId === "contractSize");
-      return !size || size.status !== "check";
-    })
-    .sort(byScoreThenDate)
-    .slice(0, 6);
-
-  const larger = open
-    .filter((r) => r.evidence.some((e) => e.ruleId === "tradeFit" && e.status === "met"))
-    .filter((r) => r.evidence.some((e) => e.ruleId === "contractSize" && e.status === "check"))
-    .sort(byDate);
-
-  const blocked = open
-    .filter((r) => r.classification.fit === "poor")
-    .filter((r) => r.evidence.some((e) => e.ruleId === "tradeFit" && e.status === "met"))
-    .sort(byDate);
+  const closingSoon = results.filter(isClosingSoon).sort(byDate);
+  const easyWins = results.filter(isEasyWin).sort(byScoreThenDate).slice(0, 6);
+  const larger = results.filter(isLarger).sort(byDate);
+  const blocked = results.filter(isBlocked).sort(byDate);
 
   return {
     topMatches,
@@ -152,6 +166,7 @@ export interface Filters {
   fit: Fit[];
   includeClosed: boolean;
   search: string;
+  quick: QuickFilter;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -164,6 +179,7 @@ export const DEFAULT_FILTERS: Filters = {
   fit: [],
   includeClosed: false,
   search: "",
+  quick: "none",
 };
 
 function sizeBucketOf(r: MatchResult): SizeBucket {
@@ -181,6 +197,7 @@ export function applyFilters(results: MatchResult[], f: Filters): MatchResult[] 
   return results.filter((r) => {
     const s = r.solicitation;
     if (!f.includeClosed && r.classification.availability === "closed") return false;
+    if (f.quick !== "none" && !QUICK_PREDICATE[f.quick](r)) return false;
     if (f.categories.length && !f.categories.some((c) => c === s.category || s.secondaryCategories.includes(c))) return false;
     if (f.departments.length && !f.departments.includes(s.department)) return false;
     if (f.agencies.length && !f.agencies.includes(s.agencyId)) return false;
@@ -201,7 +218,8 @@ export function applyFilters(results: MatchResult[], f: Filters): MatchResult[] 
 
 export const FIT_ORDER: Record<Fit, number> = { strong: 0, possible: 1, poor: 2 };
 
-export function sortForList(results: MatchResult[]): MatchResult[] {
+export function sortForList(results: MatchResult[], quick: QuickFilter = "none"): MatchResult[] {
+  if (quick === "closing" || quick === "larger" || quick === "blocked") return [...results].sort(byDate);
   return [...results].sort(
     (a, b) =>
       (a.classification.availability === "closed" ? 1 : 0) - (b.classification.availability === "closed" ? 1 : 0) ||

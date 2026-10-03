@@ -5,7 +5,7 @@ import { inferCategory } from "@/lib/engine/infer-category";
 import { buildChecklist, groupHeading } from "@/lib/engine/checklist";
 import { subtractBusinessDays, daysBetween } from "@/lib/engine/dates";
 import { buildSummary } from "@/lib/engine/explain";
-import { buildDashboard } from "@/lib/engine/dashboard";
+import { applyFilters, buildDashboard, DEFAULT_FILTERS } from "@/lib/engine/dashboard";
 import { SOLICITATIONS } from "@/lib/data/solicitations";
 import { DEMO_PROFILE_BY_ID } from "@/lib/data/profiles";
 
@@ -270,3 +270,18 @@ describe("T9 summary and dashboard on the real dataset", () => {
     }
   });
 });
+
+describe("T10 quick-filter chips equal the dashboard sections", () => {
+  const p = prepareProfile(DEMO_PROFILE_BY_ID["demo-electrician"]);
+  const results = SOLICITATIONS.map((s) => evaluate(s, p, TODAY));
+  const dash = buildDashboard(results);
+  const ids = (list: { solicitation: { id: string } }[]) => list.map((r) => r.solicitation.id).sort();
+  it("closing, larger and blocked chips select exactly their sections", () => {
+    expect(ids(applyFilters(results, { ...DEFAULT_FILTERS, quick: "closing" }))).toEqual(ids(dash.closingSoon));
+    expect(ids(applyFilters(results, { ...DEFAULT_FILTERS, quick: "larger" }))).toEqual(ids(dash.larger));
+    expect(ids(applyFilters(results, { ...DEFAULT_FILTERS, quick: "blocked" }))).toEqual(ids(dash.blocked));
+    const easy = ids(applyFilters(results, { ...DEFAULT_FILTERS, quick: "easy" }));
+    for (const id of ids(dash.easyWins)) expect(easy).toContain(id);
+  });
+});
+

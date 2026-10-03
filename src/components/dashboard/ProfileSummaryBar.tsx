@@ -3,21 +3,7 @@
 import Link from "next/link";
 import { CATEGORY_LABELS, type BusinessProfile } from "@/lib/data/types";
 import { Money } from "@/components/ui";
-
-const CERT_LABELS: Record<string, string> = {
-  SLEB: "SLEB",
-  DIR: "DIR",
-  EVITP: "EVITP",
-  SERVSAFE: "ServSafe",
-  COURT_INTERPRETER: "Court interpreter",
-  ATA: "ATA",
-  BSIS_PPO: "BSIS PPO",
-  QEI: "QEI",
-  ASE: "ASE",
-  BICSI: "BICSI",
-  MEDI_CAL_PROVIDER: "Medi-Cal provider",
-};
-const certLabel = (code: string) => CERT_LABELS[code.toUpperCase()] ?? code.replace(/_/g, " ");
+import { certLabel } from "@/lib/data/certifications";
 
 export function ProfileSummaryBar({ profile, counts }: { profile: BusinessProfile; counts: { strong: number; possible: number; poor: number; open: number } }) {
   const bits: string[] = [];
@@ -30,7 +16,7 @@ export function ProfileSummaryBar({ profile, counts }: { profile: BusinessProfil
     <div className="card p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-x-6">
       <div className="min-w-0 sm:flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <h1 className="text-2xl font-semibold text-ink">{profile.name}</h1>
+          <h1 className="font-display text-2xl font-semibold text-ink">{profile.name}</h1>
           <Link href="/" className="text-sm text-green hover:underline">
             change business
           </Link>

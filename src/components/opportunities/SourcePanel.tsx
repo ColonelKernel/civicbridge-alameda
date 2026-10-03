@@ -38,7 +38,31 @@ export function SourcePanel({ sol }: { sol: Solicitation }) {
         ) : (
           <p className="text-muted">No link was provided with this text.</p>
         )}
+        {sol.portalUrl && (
+          <a href={sol.portalUrl} target="_blank" rel="noreferrer" className="block text-green hover:underline break-words">
+            Open the project on the bidding portal ↗
+          </a>
+        )}
         <p className="text-xs text-muted">{provenanceText(sol)}</p>
+        {sol.attachments.length > 0 && (
+          <div>
+            <h4 className="font-medium text-ink">Solicitation documents</h4>
+            <p className="text-xs text-muted">Copied into this portal from the agency&apos;s posting. The agency&apos;s current version wins.</p>
+            <ul className="mt-1 space-y-1">
+              {sol.attachments.map((a) => (
+                <li key={a.url} className="text-xs">
+                  <a href={a.localPath ?? a.url} target="_blank" rel="noreferrer" className="text-green underline break-words">
+                    {a.label}
+                  </a>
+                  <span className="text-muted">
+                    {a.bytes ? ` · ${(a.bytes / 1_048_576).toFixed(a.bytes > 1_048_576 ? 0 : 1)} MB` : ""}
+                    {a.localPath ? "" : " · on the County site"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {sol.provenance.note && <p className="text-xs text-muted">{sol.provenance.note}</p>}
         <div>
           <h4 className="font-medium text-ink">Contact</h4>

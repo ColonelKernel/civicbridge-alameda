@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import type { AdminBurden, EvidenceStatus, Fit } from "@/lib/data/types";
+import type { AdminBurden, EvidenceStatus, Fit, FitConfidence, FitRecommendation } from "@/lib/data/types";
 import { countdownLabel, formatCivic, urgency } from "@/lib/engine/dates";
 import type { CivicDate } from "@/lib/data/types";
+import { GOVERNANCE_LABELS, type Agency, type Governance } from "@/lib/data/agencies";
+import { RECOMMENDATION_LABELS } from "@/lib/engine/fit-score";
 
 export function Card({ children, className = "", as: Tag = "div" }: { children: ReactNode; className?: string; as?: "div" | "article" | "section" | "li" }) {
   return <Tag className={`card p-5 ${className}`}>{children}</Tag>;
@@ -143,4 +145,150 @@ export function ProgressBar({ value, max, label }: { value: number; max: number;
 
 export function Money({ n }: { n: number }) {
   return <>{n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : `$${Math.round(n / 1000).toLocaleString()}k`}</>;
+}
+
+// ---------------------------------------------------------------------------
+// Bid Effort Fit presentation
+// ---------------------------------------------------------------------------
+
+export const RECOMMENDATION_META: Record<FitRecommendation, { label: string; short: string; cls: string; accent: string; blurb: string }> = {
+  strong: {
+    label: RECOMMENDATION_LABELS.strong,
+    short: "Strong",
+    cls: "bg-green-soft text-green border-green/20",
+    accent: "border-l-green",
+    blurb: "Scope, readiness and size line up with what you told us. Read the packet and plan the dates.",
+  },
+  investigate: {
+    label: RECOMMENDATION_LABELS.investigate,
+    short: "Investigate",
+    cls: "bg-blue-soft text-blue border-blue/20",
+    accent: "border-l-blue",
+    blurb: "The scope fits, but several points are unread or unanswered. Open the posting before you commit time.",
+  },
+  verify: {
+    label: RECOMMENDATION_LABELS.verify,
+    short: "Verify",
+    cls: "bg-amber-soft text-amber border-amber/20",
+    accent: "border-l-amber",
+    blurb: "Something stated needs confirming or arranging, or we know too little. Clear the check items first.",
+  },
+  blocked: {
+    label: RECOMMENDATION_LABELS.blocked,
+    short: "Blocked",
+    cls: "bg-red-soft text-red border-red/20",
+    accent: "border-l-red",
+    blurb: "A stated requirement is missing from your profile. The quote is the exact wording.",
+  },
+};
+
+export const CONFIDENCE_META: Record<FitConfidence, { label: string; cls: string; hint: string }> = {
+  high: { label: "High confidence", cls: "bg-green-soft text-green", hint: "The requirements were read and your profile answers them." },
+  medium: { label: "Medium confidence", cls: "bg-amber-soft text-amber", hint: "Some requirements or profile fields are unknown." },
+  low: { label: "Low confidence", cls: "bg-slate-soft text-slate", hint: "Listing only, thin text, or most of your profile is blank." },
+};
+
+export const COMPONENT_META = {
+  scope: { label: "Scope match", max: 35, hint: "trade, capabilities, wording" },
+  readiness: { label: "Readiness", max: 35, hint: "licenses, certifications, insurance, staffing" },
+  commercial: { label: "Commercial", max: 15, hint: "size, paperwork effort" },
+  localAndTiming: { label: "Local & timing", max: 15, hint: "location rules, stated preferences, days left" },
+} as const;
+
+export const FIT_SCORE_DISCLAIMER = "Guidance only, not an eligibility determination or award prediction. The agency decides after reading your full response.";
+
+export function FitScoreChip({ score, status, recommendation, size = "md" }: { score?: number; status: "scored" | "blocked"; recommendation: FitRecommendation; size?: "sm" | "md" | "lg" }) {
+  const m = RECOMMENDATION_META[recommendation];
+  const pad = size === "lg" ? "px-3 py-1.5 text-base" : size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm";
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border font-medium tabular-nums ${pad} ${m.cls}`} title={m.label}>
+      {status === "scored" ? (
+        <>
+          <span className="font-semibold">{score}</span>
+          <span className="opacity-70 font-normal">/100</span>
+        </>
+      ) : (
+        <span className="font-semibold">Blocked</span>
+      )}
+      <span className="opacity-90 font-normal">· {m.short}</span>
+    </span>
+  );
+}
+
+export function FitConfidenceTag({ confidence }: { confidence: FitConfidence }) {
+  const m = CONFIDENCE_META[confidence];
+  return (
+    <span className={`text-[11px] uppercase tracking-wide rounded px-1.5 py-0.5 ${m.cls}`} title={m.hint}>
+      {m.label}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Layout helpers
+// ---------------------------------------------------------------------------
+
+/** A <details> with a visible chevron (summary markers are hidden globally). */
+export function Disclosure({ summary, children, defaultOpen = false, count, className = "", id }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean; count?: number; className?: string; id?: string }) {
+  return (
+    <details id={id} open={defaultOpen} className={`group card ${className}`}>
+      <summary className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 select-none">
+        <span className="font-semibold text-ink flex items-center gap-2">
+          <span aria-hidden className="text-muted group-open:hidden">▸</span>
+          <span aria-hidden className="text-muted hidden group-open:inline">▾</span>
+          {summary}
+        </span>
+        {count !== undefined && <span className="text-xs text-muted shrink-0">{count}</span>}
+      </summary>
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5">{children}</div>
+    </details>
+  );
+}
+
+export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <p className={`text-xs font-semibold uppercase tracking-[0.14em] text-green ${className}`}>{children}</p>;
+}
+
+// ---------------------------------------------------------------------------
+// Entity identity: text marks for buyers, never their seals or logos
+// ---------------------------------------------------------------------------
+
+const ENTITY_TINT: Record<Governance, string> = {
+  "county-department": "bg-green-soft text-green",
+  "county-commission": "bg-green-soft text-green",
+  "special-district": "bg-slate-soft text-slate",
+  jpa: "bg-slate-soft text-slate",
+  authority: "bg-slate-soft text-slate",
+  court: "bg-slate-soft text-slate",
+  city: "bg-blue-soft text-blue",
+  "school-district": "bg-amber-soft text-amber",
+  regional: "bg-slate-soft text-slate",
+  state: "bg-paper text-ink border border-line",
+  federal: "bg-paper text-ink border border-line",
+  other: "bg-slate-soft text-slate",
+};
+
+export function entityMonogram(a: Pick<Agency, "shortName" | "displayName">): string {
+  const src = a.shortName.replace(/[^A-Za-z0-9 ]/g, " ").trim();
+  if (/^[A-Z0-9]{2,5}$/.test(src)) return src.slice(0, 4);
+  const words = src.split(/\s+/).filter((w) => !/^(of|the|and|for|city|county)$/i.test(w));
+  const letters = words.map((w) => w[0]?.toUpperCase() ?? "").join("");
+  return (letters || src.slice(0, 2)).slice(0, 3);
+}
+
+export function EntityMark({ agency, size = "md", showGovernance = false, className = "" }: { agency: Agency; size?: "sm" | "md" | "lg"; showGovernance?: boolean; className?: string }) {
+  const tile = size === "lg" ? "h-10 w-10 text-sm" : size === "sm" ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs";
+  return (
+    <span className={`inline-flex items-center gap-2 min-w-0 ${className}`} title={`${agency.name} · ${GOVERNANCE_LABELS[agency.governance]}`}>
+      <span aria-hidden className={`inline-flex shrink-0 items-center justify-center rounded-md font-bold tracking-tight ${tile} ${ENTITY_TINT[agency.governance]}`}>
+        {entityMonogram(agency)}
+      </span>
+      {size !== "sm" && (
+        <span className="min-w-0">
+          <span className="block truncate font-medium text-ink leading-tight">{agency.displayName}</span>
+          {showGovernance && <span className="block text-[11px] text-muted leading-tight">{GOVERNANCE_LABELS[agency.governance]}</span>}
+        </span>
+      )}
+    </span>
+  );
 }

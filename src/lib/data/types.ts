@@ -281,6 +281,12 @@ export const SolicitationSchema = z.object({
   submissionMethod: z.string(),
   requirements: RequirementsSchema,
   documents: z.array(DocumentSchema).default([]),
+  /** Solicitation files pulled into the portal by scripts/fetch-attachments.mjs. */
+  attachments: z
+    .array(z.object({ label: z.string(), url: z.string(), localPath: z.string().optional(), bytes: z.number().optional(), contentType: z.string().optional() }))
+    .default([]),
+  /** The project page on the agency's bidding portal (OpenGov, Bonfire), when known. */
+  portalUrl: z.string().optional(),
   scopeTags: z.array(z.enum(SCOPE_TAGS)).default([]),
   contact: ContactSchema,
   sourceUrl: z.string(),

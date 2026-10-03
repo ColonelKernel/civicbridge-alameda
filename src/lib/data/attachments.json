@@ -1,0 +1,152 @@
+{
+  "fetchedAt": "2026-10-03",
+  "records": {
+    "rfp-902787": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3258",
+      "attachments": []
+    },
+    "rfp-902759": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3254",
+      "attachments": []
+    },
+    "rfq-902753": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3259",
+      "attachments": []
+    },
+    "rfpq-26-05": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3241",
+      "attachments": []
+    },
+    "rfpq-26-06": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3240",
+      "attachments": []
+    },
+    "rfp-acphd-ovp-9000226": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3257",
+      "attachments": []
+    },
+    "rfq-902797": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3246",
+      "attachments": []
+    },
+    "rfp-902798": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3244",
+      "attachments": []
+    },
+    "irfp-902793": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3252",
+      "attachments": []
+    },
+    "rfpq-26-07": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3248",
+      "attachments": []
+    },
+    "rfp-902749": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3251",
+      "attachments": []
+    },
+    "rfp-902769": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3239",
+      "attachments": []
+    },
+    "rfp-902773": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3255",
+      "attachments": []
+    },
+    "rfp-902774": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3237",
+      "attachments": []
+    },
+    "rfq-902750": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3243",
+      "attachments": []
+    },
+    "rfq-902761": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3247",
+      "attachments": []
+    },
+    "rfq-ach-900626-v3": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3174",
+      "attachments": []
+    },
+    "l-gsa-23068": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3256",
+      "attachments": [
+        {
+          "label": "3256_1.260914FINALRFQ-GCWCCRev99-14-26.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_1.260914FINALRFQ-GCWCCRev99-14-26.pdf",
+          "localPath": "/docs/l-gsa-23068/3256_1.260914FINALRFQ-GCWCCRev99-14-26.pdf",
+          "bytes": 625044,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_2.DIV00113Combined.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_2.DIV00113Combined.pdf",
+          "localPath": "/docs/l-gsa-23068/3256_2.DIV00113Combined.pdf",
+          "bytes": 14029561,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_3.ExhibitA-HazardousMaterialsSamplingDataandAbatementReport.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_3.ExhibitA-HazardousMaterialsSamplingDataandAbatementReport.pdf",
+          "bytes": 30707977,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_4.1ExhibitB-1-WhitecottonCottageRehabilitation-95%CDPermitSetdated090326.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_4.1ExhibitB-1-WhitecottonCottageRehabilitation-95%25CDPermitSetdated090326.pdf",
+          "bytes": 19167957,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_4.2ExhibitB-2-WhitecottonCottageRehabilitation-95%CDPermitSetdated090326.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_4.2ExhibitB-2-WhitecottonCottageRehabilitation-95%25CDPermitSetdated090326.pdf",
+          "bytes": 25285612,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_4.3ExhibitB-3-WhitecottonCottageRehabilitation-95%CDPermitSetdated090326.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_4.3ExhibitB-3-WhitecottonCottageRehabilitation-95%25CDPermitSetdated090326.pdf",
+          "bytes": 17974563,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_4.4ExhibitB-4-WhitecottonCottageRehabilitation-95%CDPermitSetdated090326.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_4.4ExhibitB-4-WhitecottonCottageRehabilitation-95%25CDPermitSetdated090326.pdf",
+          "localPath": "/docs/l-gsa-23068/3256_4.4ExhibitB-4-WhitecottonCottageRehabilitation-95%CDPermitSetdated090326.pdf",
+          "bytes": 13858644,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_5.ExhibitsCDEHICombined.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_5.ExhibitsCDEHICombined.pdf",
+          "localPath": "/docs/l-gsa-23068/3256_5.ExhibitsCDEHICombined.pdf",
+          "bytes": 13178186,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_6.1ExhibitF-1CEQAReportbyDJPowersdated06052026_Part1.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_6.1ExhibitF-1CEQAReportbyDJPowersdated06052026_Part1.pdf",
+          "bytes": 22646942,
+          "contentType": "application/pdf"
+        },
+        {
+          "label": "3256_6.2ExhibitF-2CEQAreportbyDJPowersdated06052026_Part2.pdf",
+          "url": "https://alamedacountyca.gov/gsaapp/purchasing/bidContent_ftp/rfpDocs/3256_6.2ExhibitF-2CEQAreportbyDJPowersdated06052026_Part2.pdf",
+          "localPath": "/docs/l-gsa-23068/3256_6.2ExhibitF-2CEQAreportbyDJPowersdated06052026_Part2.pdf",
+          "bytes": 5559886,
+          "contentType": "application/pdf"
+        }
+      ]
+    },
+    "l-gsa-902686": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3253",
+      "portalUrl": "https://procurement.opengov.com/portal/acgov/projects/244457",
+      "attachments": []
+    },
+    "l-gsa-902791": {
+      "bidPageUrl": "https://gsa.acgov.org/do-business-with-us/contracting-opportunities/current-bid/?bidid=3250",
+      "attachments": []
+    }
+  }
+}

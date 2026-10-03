@@ -1,33 +1,49 @@
 "use client";
 
+import { useMemo } from "react";
 import { CATEGORIES, CATEGORY_LABELS, type Category, type Fit } from "@/lib/data/types";
-import { AGENCIES } from "@/lib/data/agencies";
-import type { DeadlineWindow, Filters, SizeBucket } from "@/lib/engine/dashboard";
+import { AGENCIES, GOVERNANCE_LABELS, type Governance } from "@/lib/data/agencies";
+import { SOLICITATIONS } from "@/lib/data/solicitations";
+import { certLabel } from "@/lib/data/certifications";
+import { DEFAULT_FILTERS, type DeadlineWindow, type Filters, type SizeBucket } from "@/lib/engine/dashboard";
 
-const CERTS = [
-  { code: "SLEB", label: "SLEB" },
-  { code: "SERVSAFE", label: "ServSafe" },
-  { code: "COURT_INTERPRETER", label: "Court interpreter" },
-  { code: "MEDI_CAL_PROVIDER", label: "Medi-Cal" },
-  { code: "QEI", label: "QEI" },
-  { code: "ASE", label: "ASE" },
-];
+/** Only certifications that at least one record actually mentions. */
+const MENTIONED_CERTS = Array.from(new Set(SOLICITATIONS.flatMap((s) => s.requirements.certifications.map((c) => c.code.toUpperCase())))).sort();
 
-export function FiltersBar({ value, onChange, departments }: { value: Filters; onChange: (f: Filters) => void; departments: string[] }) {
+export function activeFilterCount(value: Filters): number {
+  return (
+    value.categories.length +
+    value.departments.length +
+    value.agencies.length +
+    value.certification.length +
+    value.fit.length +
+    (value.deadline !== "any" ? 1 : 0) +
+    (value.size !== "any" ? 1 : 0) +
+    (value.includeClosed ? 1 : 0)
+  );
+}
+
+export function FiltersBar({ value, onChange, departments, hideSearch = false }: { value: Filters; onChange: (f: Filters) => void; departments: string[]; hideSearch?: boolean }) {
   const sel = "rounded-lg border border-line bg-paper px-2.5 py-1.5 text-sm text-ink";
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => onChange({ ...value, [k]: v });
-  const activeCount =
-    value.categories.length + value.departments.length + value.agencies.length + value.certification.length + value.fit.length + (value.deadline !== "any" ? 1 : 0) + (value.size !== "any" ? 1 : 0) + (value.includeClosed ? 1 : 0);
+  const activeCount = activeFilterCount(value);
+  const agencyGroups = useMemo(() => {
+    const map = new Map<Governance, typeof AGENCIES>();
+    for (const a of AGENCIES) map.set(a.governance, [...(map.get(a.governance) ?? []), a]);
+    return Array.from(map.entries());
+  }, []);
   return (
-    <div className="card p-3 sm:p-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
-      <input
-        type="search"
-        value={value.search}
-        onChange={(e) => set("search", e.target.value)}
-        placeholder="Search title or department"
-        aria-label="Search"
-        className={`${sel} min-w-[12rem] flex-1`}
-      />
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
+      {!hideSearch && (
+        <input
+          type="search"
+          value={value.search}
+          onChange={(e) => set("search", e.target.value)}
+          placeholder="Search title or department"
+          aria-label="Search"
+          className={`${sel} min-w-[12rem] flex-1`}
+        />
+      )}
       <select aria-label="Category" className={sel} value={value.categories[0] ?? ""} onChange={(e) => set("categories", e.target.value ? [e.target.value as Category] : [])}>
         <option value="">All categories</option>
         {CATEGORIES.map((c) => (
@@ -36,12 +52,16 @@ export function FiltersBar({ value, onChange, departments }: { value: Filters; o
           </option>
         ))}
       </select>
-      <select aria-label="Agency" className={sel} value={value.agencies[0] ?? ""} onChange={(e) => set("agencies", e.target.value ? [e.target.value] : [])}>
-        <option value="">All agencies</option>
-        {AGENCIES.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.shortName}
-          </option>
+      <select aria-label="Buyer" className={`${sel} max-w-[14rem]`} value={value.agencies[0] ?? ""} onChange={(e) => set("agencies", e.target.value ? [e.target.value] : [])}>
+        <option value="">All buyers</option>
+        {agencyGroups.map(([g, list]) => (
+          <optgroup key={g} label={GOVERNANCE_LABELS[g]}>
+            {list.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.displayName}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
       <select aria-label="Department" className={`${sel} max-w-[14rem]`} value={value.departments[0] ?? ""} onChange={(e) => set("departments", e.target.value ? [e.target.value] : [])}>
@@ -69,9 +89,9 @@ export function FiltersBar({ value, onChange, departments }: { value: Filters; o
       </select>
       <select aria-label="Certification mentioned" className={sel} value={value.certification[0] ?? ""} onChange={(e) => set("certification", e.target.value ? [e.target.value] : [])}>
         <option value="">Any certification</option>
-        {CERTS.map((c) => (
-          <option key={c.code} value={c.code}>
-            Mentions {c.label}
+        {MENTIONED_CERTS.map((c) => (
+          <option key={c} value={c}>
+            Mentions {certLabel(c)}
           </option>
         ))}
       </select>
@@ -86,7 +106,7 @@ export function FiltersBar({ value, onChange, departments }: { value: Filters; o
         Show closed
       </label>
       {activeCount > 0 && (
-        <button type="button" className="text-sm text-green font-medium hover:underline" onClick={() => onChange({ ...value, categories: [], departments: [], agencies: [], deadline: "any", size: "any", certification: [], fit: [], includeClosed: false, search: "" })}>
+        <button type="button" className="text-sm text-green font-medium hover:underline" onClick={() => onChange({ ...DEFAULT_FILTERS, search: value.search, quick: value.quick })}>
           Clear ({activeCount})
         </button>
       )}

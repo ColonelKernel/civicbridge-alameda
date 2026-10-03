@@ -4,16 +4,20 @@ import Link from "next/link";
 import type { MatchResult } from "@/lib/data/types";
 import { CATEGORY_LABELS } from "@/lib/data/types";
 import { agencyFor } from "@/lib/data/agencies";
-import { BurdenTag, DeadlineChip, FitBadge, Money, SourceTag, StatusIcon } from "@/components/ui";
+import { BurdenTag, DeadlineChip, EntityMark, FitBadge, Money, RECOMMENDATION_META, SourceTag } from "@/components/ui";
+import { useLanguage } from "@/state/language";
+import { FitScorePanel } from "./FitScorePanel";
 
 export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResult; today: string; showAgency?: boolean }) {
+  const { t } = useLanguage();
   const s = r.solicitation;
   const c = r.classification;
   const closed = c.availability === "closed";
-  const lines = pickLines(r);
   const v = s.estimatedValue;
+  const agency = agencyFor(s.agencyId);
+  const accent = closed ? "border-l-line" : RECOMMENDATION_META[r.fitScore.recommendation].accent;
   return (
-    <article className={`card p-4 sm:p-5 flex flex-col gap-3 ${closed ? "opacity-80" : ""}`}>
+    <article className={`card p-4 sm:p-5 flex flex-col gap-3 border-l-4 ${accent} ${closed ? "opacity-80" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <FitBadge fit={c.fit} verifyCount={c.verify.length} closed={closed} size="sm" />
         <DeadlineChip due={s.dates.submissionDue} today={today} size="sm" />
@@ -27,20 +31,16 @@ export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResul
             {s.title}
           </Link>
         </h3>
-        <p className="text-sm text-muted mt-0.5">
-          {showAgency && agencyFor(s.agencyId).shortName !== "County GSA" ? `${agencyFor(s.agencyId).shortName} · ` : ""}
-          {s.department} · {s.number}
+        <p className="text-sm text-muted mt-1 flex items-center gap-2 min-w-0">
+          {showAgency && <EntityMark agency={agency} size="sm" />}
+          <span className="min-w-0 flex-1 truncate">
+            {showAgency ? `${agency.displayName} · ` : ""}
+            {s.department} · {s.number}
+          </span>
         </p>
       </div>
       <p className="text-sm text-ink/90">{s.summary}</p>
-      <ul className="space-y-1.5" aria-label="Why it fits">
-        {lines.map((e) => (
-          <li key={e.ruleId + e.label} className="flex items-start gap-2 text-sm">
-            <StatusIcon status={e.status} className="mt-0.5" />
-            <span className={e.status === "missing" ? "text-red" : "text-ink"}>{e.label}</span>
-          </li>
-        ))}
-      </ul>
+      <FitScorePanel match={r} variant="compact" />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted pt-1 border-t border-line mt-auto">
         <span>{CATEGORY_LABELS[s.category]}</span>
         <span>
@@ -60,19 +60,9 @@ export function OpportunityCard({ r, today, showAgency = true }: { r: MatchResul
         </span>
         <BurdenTag level={r.adminBurden} reasons={r.adminBurdenReasons} />
         <Link href={`/opportunities/${encodeURIComponent(s.id)}`} className="ml-auto text-green font-medium hover:underline">
-          See the plan →
+          {t("card.plan")}
         </Link>
       </div>
     </article>
   );
-}
-
-function pickLines(r: MatchResult) {
-  const ev = r.evidence.filter((e) => e.status !== "na" && e.ruleId !== "availability" && e.ruleId !== "capabilityMatch");
-  const blockers = ev.filter((e) => e.ruleClass === "gate" && e.status === "missing");
-  const order: Record<string, number> = { tradeFit: 0, mandatoryMeeting: 1, license: 2, certRequired: 3, contractSize: 4, location: 5, certPreferred: 6, scopeCoverage: 7, experience: 8, listingOnly: 9, insurance: 10 };
-  const rest = ev.filter((e) => !blockers.includes(e)).sort((a, b) => (order[a.ruleId] ?? 20) - (order[b.ruleId] ?? 20));
-  const picked = [...blockers.slice(0, 2), ...rest];
-  const seen = new Set<string>();
-  return picked.filter((e) => (seen.has(e.ruleId + e.label) ? false : (seen.add(e.ruleId + e.label), true))).slice(0, 4);
 }
