@@ -34,6 +34,16 @@ npm run build       # Next.js production build
 npm run lint
 ```
 
+**Deploy (Vercel).** The app is a standard Next.js project; the only server piece is the extraction route. From the
+project directory:
+
+```bash
+npx vercel deploy --prod --yes --build-env NEXT_PUBLIC_DEMO_TODAY=2026-10-03 --env NEXT_PUBLIC_DEMO_TODAY=2026-10-03
+```
+
+Add `ANTHROPIC_API_KEY` in the Vercel project settings to turn on Claude extraction in production. Without a Vercel
+login, `npx vercel deploy --temporary` creates a claimable preview that lives for an hour.
+
 Stack: Next.js 16 (App Router, TypeScript, Tailwind v4), zod, vitest, `@anthropic-ai/sdk` (extraction route only).
 No database, no auth: the business profile, pasted solicitations and checklist ticks live in `localStorage`.
 

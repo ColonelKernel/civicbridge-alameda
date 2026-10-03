@@ -3,7 +3,7 @@ import { extractWithClaude } from "@/lib/engine/extract/claude";
 import { today } from "@/lib/engine/dates";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const MIN_CHARS = 80;
 const MAX_CHARS = 300_000;
