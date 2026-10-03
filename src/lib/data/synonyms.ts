@@ -118,6 +118,9 @@ export const SYNONYMS: Record<Category, SynonymSet> = {
       "weed abatement",
       "vegetation management",
       "tree removal",
+      "mow",
+      "trim trees",
+      "drip irrigation",
     ],
     weak: ["grounds", "turf", "planting", "mulch", "pruning", "trees"],
     negative: ["landscape architect", "landscape architectural"],
@@ -171,6 +174,9 @@ export const SYNONYMS: Record<Category, SynonymSet> = {
       "gis",
       "application development",
       "structured cabling",
+      "web design",
+      "website design",
+      "design websites",
     ],
     weak: ["software", "technology", "database", "hardware", "website", "cabling"],
     negative: [],
@@ -546,7 +552,7 @@ export function phraseRegex(phrase: string): RegExp {
       .toLowerCase()
       .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       .replace(/[-\s]+/g, "[-\\s]*");
-    re = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`, "i");
+    re = new RegExp(`(?<![a-z0-9])${escaped}(?:s|es|ing|ed)?(?![a-z0-9])`, "i");
     phraseCache.set(phrase, re);
   }
   return re;
