@@ -35,7 +35,8 @@ export interface RuleContext {
 export type Rule = (ctx: RuleContext) => Evidence[];
 
 export const INFERRED_MATCH_SCORE = 3;
-export const STRONG_INFERRED_SCORE = 6;
+/** Score a tradeFit needs before a match can be "strong": a primary-to-primary category match (10) or two strong synonym hits. */
+export const STRONG_INFERRED_SCORE = 7;
 
 const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : `$${Math.round(n / 1000)}k`;
@@ -99,9 +100,12 @@ export const tradeFit: Rule = ({ sol, profile }) => {
   const explicitlyDeclared = ["user", "inferred-license", "inferred-cert"].includes(profile.primaryCategorySource);
 
   if (shared.length > 0) {
-    const cat = shared[0];
+    // Prefer the owner's primary trade, then a match on the solicitation's primary category.
+    const cat = shared.find((c) => c === profile.primaryCategory) ?? shared.find((c) => c === sol.category) ?? shared[0];
     const confirmed = explicitlyDeclared && cat === profile.primaryCategory;
     const viaUmbrella = !sol.secondaryCategories.includes(cat) && sol.category !== cat;
+    const primaryToPrimary = cat === profile.primaryCategory && cat === sol.category;
+    const score = primaryToPrimary ? 10 : cat === profile.primaryCategory || cat === sol.category ? 5 : 4;
     return [
       {
         ruleId: "tradeFit",
@@ -116,7 +120,7 @@ export const tradeFit: Rule = ({ sol, profile }) => {
             : `${CATEGORY_LABELS[cat]} is listed as part of this scope and you told us that is your trade.`,
         sourceRef: { field: "category" },
         profileRef: ["primaryCategory"],
-        score: 10,
+        score,
       },
     ];
   }

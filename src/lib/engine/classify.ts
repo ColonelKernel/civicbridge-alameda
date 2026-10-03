@@ -29,10 +29,7 @@ export function classify(evidence: Evidence[], sol: Solicitation, today: ISODate
   const scope = evidence.find((e) => e.ruleId === "scopeCoverage");
   const size = evidence.find((e) => e.ruleId === "contractSize");
 
-  const strongTrade =
-    !!tradeFit &&
-    tradeFit.status === "met" &&
-    (tradeFit.confidence === "confirmed" || (tradeFit.score ?? 0) >= STRONG_INFERRED_SCORE);
+  const strongTrade = !!tradeFit && tradeFit.status === "met" && (tradeFit.score ?? 0) >= STRONG_INFERRED_SCORE;
 
   let fit: Classification["fit"];
   if (!tradeFit || tradeFit.status === "missing" || blockers.length > 0) fit = "poor";

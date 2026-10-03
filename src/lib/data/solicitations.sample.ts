@@ -653,21 +653,22 @@ BIDDER MINIMUM QUALIFICATIONS: Bidder must have at least three (3) years providi
     type: "RFQ",
     category: "it-services",
     secondary: ["electrical"],
-    summary: "Install about 380 Cat6A drops, patch panels and fiber backbone in the Public Defender's new office at 1401 Lakeside Drive. Low-voltage license required.",
-    description: "Cabling, racks, patch panels, testing and labeling to TIA-568 standards. Because cabling installation in a public building is public works, DIR registration and prevailing wage apply. Non-mandatory site walk.",
+    summary: "Install about 380 Cat6A drops, patch panels and fiber backbone in the Public Defender's new office at 1401 Lakeside Drive. Low-voltage or electrical license required. Closes October 16.",
+    description: "Cabling, racks, patch panels, testing and labeling to TIA-568 standards. Because cabling installation in a public building is public works, DIR registration and prevailing wage apply. Non-mandatory site walk on October 9; short packet.",
     value: { min: 60_000, max: 90_000, basis: "total", quote: "Estimated value $60,000 – $90,000" },
-    posted: "2026-10-02",
-    siteVisit: { date: "2026-10-15", time: "14:00", mandatory: false, location: "1401 Lakeside Drive, 3rd floor, Oakland", quote: "Non-Mandatory Site Walk October 15, 2026 @ 2:00 p.m., 1401 Lakeside Drive, Oakland" },
-    questionsDue: { date: "2026-10-19", time: "17:00" },
-    due: { date: "2026-10-28", time: "14:00" },
+    posted: "2026-09-30",
+    siteVisit: { date: "2026-10-09", time: "14:00", mandatory: false, location: "1401 Lakeside Drive, 3rd floor, Oakland", quote: "Non-Mandatory Site Walk October 9, 2026 @ 2:00 p.m., 1401 Lakeside Drive, Oakland" },
+    questionsDue: { date: "2026-10-12", time: "17:00" },
+    due: { date: "2026-10-16", time: "14:00" },
     licenses: [{ code: "C-7", label: "C-7 Low Voltage Systems or C-10 Electrical license", quote: "Bidder must hold an active C-7 Low Voltage Systems Contractor license or a C-10 Electrical Contractor license" }],
-    certs: [{ code: "BICSI", label: "BICSI-certified installer or manufacturer certification for a 25-year warranty", required: true, quote: "Installation must be certified by the cabling manufacturer for a 25-year system warranty" }],
+    certs: [{ code: "BICSI", label: "Manufacturer-certified installer (25-year system warranty)", required: false, quote: "Installers certified by the cabling manufacturer for a 25-year system warranty are preferred" }],
     experience: { years: 3, description: "3 years of commercial structured cabling", quote: "at least three (3) years of commercial structured cabling experience" },
     publicWorks: true,
+    docsMinimal: true,
     contact: { name: "B. Chen", email: "b.chen@acgov.example" },
-    excerpt: `COUNTY OF ALAMEDA REQUEST FOR QUOTATION No. 902814 for STRUCTURED CABLING (CAT6A) FOR PUBLIC DEFENDER'S NEW OFFICE. RESPONSE DUE by 2:00 p.m. on October 28, 2026.
-CALENDAR OF EVENTS: Request Issued October 2, 2026. Non-Mandatory Site Walk October 15, 2026 @ 2:00 p.m., 1401 Lakeside Drive, Oakland. Written Questions Due October 19, 2026 by 5:00 p.m. Response Due October 28, 2026 by 2:00 p.m.
-SCOPE: Furnish and install approximately 380 Cat6A drops, patch panels, racks and fiber backbone, tested and labeled to TIA-568. Estimated value $60,000 – $90,000. Installation must be certified by the cabling manufacturer for a 25-year system warranty.
+    excerpt: `COUNTY OF ALAMEDA REQUEST FOR QUOTATION No. 902814 for STRUCTURED CABLING (CAT6A) FOR PUBLIC DEFENDER'S NEW OFFICE. RESPONSE DUE by 2:00 p.m. on October 16, 2026.
+CALENDAR OF EVENTS: Request Issued September 30, 2026. Non-Mandatory Site Walk October 9, 2026 @ 2:00 p.m., 1401 Lakeside Drive, Oakland. Written Questions Due October 12, 2026 by 5:00 p.m. Response Due October 16, 2026 by 2:00 p.m.
+SCOPE: Furnish and install approximately 380 Cat6A drops, patch panels, racks and fiber backbone, tested and labeled to TIA-568. Estimated value $60,000 – $90,000. Installers certified by the cabling manufacturer for a 25-year system warranty are preferred.
 BIDDER MINIMUM QUALIFICATIONS: Bidder must hold an active C-7 Low Voltage Systems Contractor license or a C-10 Electrical Contractor license and have at least three (3) years of commercial structured cabling experience.`,
   }),
 

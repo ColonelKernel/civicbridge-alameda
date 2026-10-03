@@ -41,7 +41,8 @@ export const SYNONYMS: Record<Category, SynonymSet> = {
   "general-construction": {
     strong: [
       "general contractor",
-      "class b",
+      "class b general building",
+      "general building contractor",
       "b license",
       "tenant improvement",
       "renovation",
@@ -54,8 +55,8 @@ export const SYNONYMS: Record<Category, SynonymSet> = {
       "seismic retrofit",
       "building construction",
     ],
-    weak: ["construction", "building", "facility improvements", "repairs", "carpentry"],
-    negative: ["construction management software", "pre-construction only"],
+    weak: ["construction", "facility improvements", "carpentry", "remodeling"],
+    negative: ["construction management software", "pre-construction only", "commercial driver"],
   },
   plumbing: {
     strong: [
@@ -589,7 +590,7 @@ export function scoreCategory(
       const inTitle = normTitle.length > 0 && re.test(normTitle);
       const inBody = re.test(normBody);
       if (inTitle || inBody) {
-        const w = weight * (inTitle ? 2 : 1);
+        const w = weight * (inTitle && weight >= 3 ? 2 : 1);
         score += w;
         hits.push({ phrase, weight: w, inTitle });
       }
