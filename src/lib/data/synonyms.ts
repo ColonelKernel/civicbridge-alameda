@@ -527,7 +527,7 @@ export const CERT_TO_CATEGORY: Record<string, Category> = {
 export function normalizeText(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[‘’“”]/g, "'")
+    .replace(/[‘’“”"]/g, "'")
     .replace(/-\n/g, "")
     .replace(/[‐-―]/g, "-")
     .replace(/\s+/g, " ")

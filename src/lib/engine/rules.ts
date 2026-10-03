@@ -52,10 +52,6 @@ function solicitationCategories(sol: Solicitation): Category[] {
   return Array.from(new Set([sol.category, ...sol.secondaryCategories, ...(UMBRELLA[sol.category] ?? [])]));
 }
 
-function solicitationText(sol: Solicitation): string {
-  return `${sol.summary}\n${sol.description}\n${sol.sourceExcerpt}`;
-}
-
 // ---------------------------------------------------------------------------
 
 export const availability: Rule = ({ sol, today }) => {
