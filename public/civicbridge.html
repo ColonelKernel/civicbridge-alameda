@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f6">
+  <title>CivicBridge Alameda County | Countywide procurement & housing</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2924;
+      --muted: #78837c;
+      --line: #e7ebe6;
+      --paper: #fff;
+      --canvas: #f7f8f6;
+      --green: #1e684a;
+      --green-dark: #164d37;
+      --green-soft: #eaf4ed;
+      --lime: #d6f073;
+      --amber: #a96513;
+      --amber-soft: #fff5e4;
+      --red: #b8483f;
+      --red-soft: #fff0ee;
+      --shadow: 0 14px 40px rgba(28, 41, 36, .06);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font-size: 14px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline:3px solid #78a989;outline-offset:2px; }
+    .app { min-height: 100vh; }
+    .sidebar {
+      width: 246px; position: fixed; inset: 0 auto 0 0; z-index: 5; background: #fff;
+      border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 25px 16px 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 34px; }
+    .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; color: #fff; background: var(--green); font-weight: 800; font-size: 18px; }
+    .brand-name { font-size: 15px; font-weight: 750; letter-spacing: -.35px; }
+    .brand-sub { color: var(--muted); font-size: 10px; margin-top: 2px; letter-spacing: .45px; text-transform: uppercase; }
+    .nav-label { color: #9ba49e; padding: 0 12px; margin: 0 0 9px; font-size: 10px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; }
+    .nav { display: grid; gap: 4px; }
+    .nav button { display: flex; align-items: center; gap: 12px; border: 0; padding: 11px 12px; border-radius: 9px; color: #68746d; background: transparent; text-align: left; font-weight: 600; }
+    .nav button:hover { background: #f7f8f6; color: var(--ink); }
+    .nav button.active { color: var(--green-dark); background: var(--green-soft); }
+    .nav-icon { width: 18px; text-align: center; font-size: 17px; line-height: 1; }
+    .nav-count { margin-left: auto; border-radius: 99px; padding: 2px 7px; color: #707b73; background: #f0f2ef; font-size: 11px; }
+    .side-bottom { margin-top: auto; }
+    .help-box { margin: 0 4px 20px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; }
+    .help-box strong { display: block; font-size: 12px; margin-bottom: 5px; }
+    .help-box p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 0 0 10px; }
+    .text-link { border: 0; padding: 0; color: var(--green); background: transparent; font-weight: 700; font-size: 11px; }
+    .profile-mini { border-top: 1px solid var(--line); padding: 17px 9px 0; display: flex; align-items: center; gap: 10px; }
+    .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--green-dark); background: #e5f0e8; font-weight: 750; }
+    .profile-mini strong { font-size: 12px; display: block; }
+    .profile-mini span { color: var(--muted); font-size: 11px; }
+    .workspace { margin-left: 246px; }
+    .topbar { height: 66px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.85); display: flex; align-items: center; justify-content: space-between; padding: 0 42px; }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 20px; }
+    .county-pill { color: #68746d; border: 1px solid var(--line); padding: 7px 10px; border-radius: 99px; font-size: 11px; }
+    .icon-button { border: 0; background: transparent; color: #647168; font-size: 17px; position: relative; }
+    .notify-dot { position: absolute; right: 0; top: 0; width: 6px; height: 6px; border: 1px solid #fff; background: #df735c; border-radius: 50%; }
+    main { max-width: 1440px; padding: 35px 42px 56px; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .eyebrow { color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: 1.25px; text-transform: uppercase; }
+    h1 { font-size: clamp(27px, 3vw, 35px); letter-spacing: -1.3px; margin: 8px 0 8px; line-height: 1.15; }
+    .subhead { color: var(--muted); line-height: 1.6; margin: 0; }
+    .welcome-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 25px; gap: 20px; }
+    .btn { min-height: 39px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; font-weight: 700; font-size: 12px; transition: .15s ease; }
+    .btn:hover { border-color: #bec9c0; transform: translateY(-1px); }
+    .btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+    .btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    .btn-dark { background: #24352e; color: #fff; border-color: #24352e; }
+    .btn-small { min-height: 32px; padding: 0 11px; font-size: 11px; }
+    .btn:disabled { opacity:.5;cursor:not-allowed;transform:none; }
+    .investment-actions { display:flex;gap:8px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 27px; }
+    .metric { padding: 15px 17px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+    .metric-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .metric strong { display: block; font-size: 25px; letter-spacing: -.7px; margin: 8px 0 2px; }
+    .metric small { color: var(--muted); font-size: 10px; }
+    .metric small em { color: var(--green); font-style: normal; font-weight: 700; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; }
+    .section-heading h2 { font-size: 16px; letter-spacing: -.3px; margin: 0; }
+    .section-heading span { color: var(--muted); font-size: 11px; }
+    .work-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(290px, .85fr); gap: 18px; align-items: start; }
+    .opportunity-list { display: grid; gap: 10px; }
+    .op-card { padding: 17px 18px; border: 1px solid var(--line); border-radius: 11px; background: #fff; transition: .15s; }
+    .op-card.selected { border-color: #71a88a; box-shadow: 0 0 0 2px rgba(30,104,74,.08); }
+    .op-top { display: flex; justify-content: space-between; gap: 12px; }
+    .op-title { font-size: 14px; line-height: 1.4; font-weight: 750; letter-spacing: -.15px; }
+    .op-id { color: #929b94; font-size: 10px; margin-top: 4px; }
+    .trade-chip { flex: 0 0 auto; align-self: flex-start; padding: 5px 8px; border-radius: 99px; color: var(--green-dark); background: var(--green-soft); font-size: 10px; font-weight: 700; }
+    .op-meta { display: flex; gap: 14px; flex-wrap: wrap; margin: 15px 0 13px; color: #68746d; font-size: 11px; }
+    .op-meta span { display: inline-flex; align-items: center; gap: 5px; }
+    .op-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f2ef; padding-top: 12px; }
+    .close-soon { color: #a96513; font-weight: 700; font-size: 11px; }
+    .match { color: var(--green); font-size: 10px; font-weight: 700; }
+    .filters { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 13px; }
+    .filter { white-space: nowrap; border: 1px solid var(--line); border-radius: 99px; background: #fff; color: #637067; padding: 6px 10px; font-size: 10px; }
+    .filter.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .preview-card { position: sticky; top: 18px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: var(--shadow); }
+    .preview-head { color: #fff; background: var(--green-dark); padding: 19px 20px; }
+    .preview-head .eyebrow { color: #bde3c4; }
+    .preview-head h3 { font-size: 18px; line-height: 1.3; margin: 8px 0 6px; }
+    .preview-head p { color: #d6e5da; font-size: 11px; margin: 0; }
+    .preview-body { padding: 17px 20px 20px; }
+    .preview-value { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .preview-value span { color: var(--muted); font-size: 11px; }
+    .preview-value strong { font-size: 17px; }
+    .preview-facts { display: grid; gap: 12px; padding: 15px 0; }
+    .fact { display: flex; gap: 9px; align-items: flex-start; }
+    .fact-icon { width: 19px; color: #859188; }
+    .fact-label { color: var(--muted); font-size: 10px; margin-bottom: 3px; }
+    .fact strong { font-size: 11px; }
+    .preview-notice { padding: 10px 11px; border-radius: 8px; color: #725626; background: var(--amber-soft); font-size: 10px; line-height: 1.5; margin-bottom: 14px; }
+    .preview-body .btn { width: 100%; }
+    .back-link { border: 0; padding: 0; color: var(--green); background: transparent; font-size: 11px; font-weight: 700; margin-bottom: 17px; }
+    .bid-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(270px, .8fr); align-items: start; gap: 18px; }
+    .bid-main, .bid-side, .panel { border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .bid-main { overflow: hidden; }
+    .bid-hero { padding: 23px 25px 20px; background: linear-gradient(125deg, #174e38 0%, #216d4d 100%); color: #fff; }
+    .bid-hero .eyebrow { color: #c6e5cc; }
+    .bid-hero h1 { font-size: 25px; margin: 8px 0; max-width: 680px; }
+    .bid-hero .subhead { color: #d7e7db; font-size: 12px; }
+    .bid-hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .hero-chip { color: #fff; background: rgba(255,255,255,.12); padding: 6px 9px; border-radius: 99px; font-size: 10px; }
+    .bid-tabs { display: flex; gap: 25px; border-bottom: 1px solid var(--line); padding: 0 25px; overflow: auto; }
+    .bid-tab { border: 0; border-bottom: 2px solid transparent; padding: 15px 0 13px; color: #78837c; white-space: nowrap; background: transparent; font-size: 11px; font-weight: 700; }
+    .bid-tab.active { color: var(--green); border-color: var(--green); }
+    .bid-panel { padding: 23px 25px 26px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .content-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .content-title h2 { font-size: 15px; margin: 0; }
+    .content-title span { color: var(--muted); font-size: 10px; }
+    .scope-copy { color: #546158; line-height: 1.75; font-size: 12px; margin: 0 0 21px; }
+    .citation { display: inline-block; color: var(--green); background: #edf5ef; padding: 3px 6px; border-radius: 5px; font-size: 9px; font-weight: 700; cursor: pointer; border: 0; }
+    .citation:hover { background: #dceee1; }
+    .group-title { color: #879189; margin: 22px 0 8px; font-size: 10px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; }
+    .requirement { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f2ef; align-items: center; }
+    .requirement:last-child { border-bottom: 0; }
+    .req-name { font-size: 11px; font-weight: 700; }
+    .req-note { color: var(--muted); font-size: 10px; margin-top: 4px; line-height: 1.5; }
+    .req-status { padding: 5px 8px; border-radius: 99px; font-size: 9px; font-weight: 750; white-space: nowrap; }
+    .status-ok { color: #23633f; background: #e8f4eb; }
+    .status-warn { color: #9c631b; background: #fff4e1; }
+    .status-gap { color: #ad443b; background: #fff0ed; }
+    .bid-side { padding: 18px; }
+    .audit-top { display: flex; align-items: center; justify-content: space-between; }
+    .audit-top h3 { font-size: 13px; margin: 0; }
+    .audit-score { display: grid; place-items: center; width: 46px; height: 46px; border: 3px solid #f1cd80; border-radius: 50%; color: #8d621b; font-weight: 800; font-size: 12px; }
+    .audit-result { margin: 15px 0; padding: 12px; border: 1px solid #f1e0bc; border-radius: 9px; background: #fffbf2; }
+    .result-label { color: var(--amber); font-size: 9px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+    .audit-result strong { display: block; margin: 4px 0; font-size: 16px; }
+    .audit-result p { color: #75694f; line-height: 1.5; font-size: 10px; margin: 0; }
+    .audit-list { display: grid; gap: 11px; margin: 17px 0; }
+    .audit-row { display: flex; align-items: flex-start; gap: 8px; }
+    .audit-mark { width: 16px; flex: 0 0 16px; font-weight: 800; }
+    .audit-row strong { display: block; font-size: 10px; }
+    .audit-row span { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+    .notice { display: flex; gap: 9px; color: #6f6247; background: var(--amber-soft); border-radius: 8px; padding: 11px; font-size: 9px; line-height: 1.5; margin: 15px 0; }
+    .bid-side .btn { width: 100%; margin-top: 7px; }
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 15px 0 18px; }
+    .date-card { border: 1px solid var(--line); border-radius: 9px; padding: 11px; }
+    .date-card span { display: block; color: var(--muted); font-size: 9px; margin-bottom: 5px; }
+    .date-card strong { font-size: 11px; }
+    .calendar-toolbar { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fafbf9;margin:14px 0 8px; }
+    .calendar-toolbar p { color:var(--muted);font-size:9px;line-height:1.5;margin:0; }
+    .calendar-actions { display:flex;gap:7px;flex-wrap:wrap; }
+    .date-card-actions { display:flex;flex-wrap:wrap;gap:6px;margin-top:9px; }
+    .calendar-link { border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff;color:var(--green-dark);font-size:8px;font-weight:700;text-decoration:none; }
+    .calendar-link:hover { border-color:#9bbda5;background:var(--green-soft); }
+    .citation-detail { padding: 12px; border-left: 2px solid var(--green); background: #f5f8f5; border-radius: 0 8px 8px 0; margin-top: 8px; }
+    .citation-detail p { color: #5f6c63; font-size: 10px; line-height: 1.6; margin: 5px 0 0; }
+    .quote-note { color: var(--muted); font-size: 10px; margin: 0 0 16px; line-height: 1.5; }
+    .upload-box { border:1px dashed #b9c8bc;border-radius:10px;padding:13px;background:#f8faf8;margin:0 0 16px; }
+    .upload-box.dragging { border-color:var(--green);background:var(--green-soft); }
+    .upload-header { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+    .upload-header strong { display:block;font-size:10px; }
+    .upload-header p { color:var(--muted);font-size:9px;line-height:1.5;margin:4px 0 0; }
+    .upload-list { display:grid;gap:6px;margin-top:10px; }
+    .upload-item { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff; }
+    .upload-item-name { min-width:0;overflow-wrap:anywhere;color:#46534a;font-size:9px; }
+    .upload-item-size { color:var(--muted);font-size:8px;white-space:nowrap; }
+    .upload-item-remove { flex:0 0 auto;border:0;padding:3px 6px;border-radius:5px;background:transparent;color:#966057;font-size:9px; }
+    .upload-status { color:#647168;font-size:9px;line-height:1.5;margin-top:8px; }
+    .quote-table { width: 100%; border-collapse: collapse; }
+    .quote-table th { color: #88928b; font-size: 9px; text-align: left; font-weight: 750; letter-spacing: .4px; text-transform: uppercase; padding: 9px 6px; border-bottom: 1px solid var(--line); }
+    .quote-table td { padding: 8px 5px; border-bottom: 1px solid #f0f2ef; }
+    .quote-table input { width: 100%; min-width: 45px; padding: 8px 7px; border: 1px solid var(--line); border-radius: 6px; font-size: 10px; outline-color: #74a68a; }
+    .quote-table .line-desc { min-width: 120px; }
+    .remove-line { border: 0; background: transparent; color: #a1aaa4; font-size: 15px; }
+    .quote-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+    .quote-actions .text-link { font-size: 10px; }
+    .quote-total { display: flex; justify-content: flex-end; align-items: baseline; gap: 15px; border-top: 1px solid var(--line); padding-top: 15px; margin-top: 16px; }
+    .quote-total span { color: var(--muted); font-size: 11px; }
+    .quote-total strong { font-size: 22px; letter-spacing: -.5px; }
+    .full-width { width: 100%; margin-top: 17px; }
+    .profile-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+    .field label { display: block; color: #59665d; font-size: 10px; font-weight: 700; margin-bottom: 6px; }
+    .field input, .field select { width: 100%; min-height: 39px; border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px; outline-color: #74a68a; background: #fff; color: var(--ink); font-size: 11px; }
+    .field.full { grid-column: 1 / -1; }
+    .profile-card { padding: 22px; }
+    .profile-card h2 { margin: 0 0 5px; font-size: 16px; }
+    .profile-card > p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 0 0 19px; }
+    .save-row { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; gap: 12px; }
+    .save-msg { color: var(--green); font-size: 10px; }
+    .empty-message { display: none; border: 1px dashed #cfd7d0; border-radius: 11px; padding: 30px; color: var(--muted); text-align: center; font-size: 12px; background: #fff; }
+    .toast { position: fixed; z-index: 10; bottom: 22px; left: 50%; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; color: #fff; background: #23372e; border-radius: 9px; padding: 11px 16px; box-shadow: var(--shadow); font-size: 11px; transition: .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .mobile-nav { display: none; }
+    .fine-print { color: #8c968f; font-size: 9px; line-height: 1.5; margin: 15px 0 0; }
+    .service-intro { max-width: 760px;margin:22px auto;padding:28px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:var(--shadow); }
+    .service-intro h1 { margin:8px 0; }
+    .service-intro .subhead { max-width:650px;font-size:12px; }
+    .module-choices { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:22px 0 17px; }
+    .module-choice { display:flex;align-items:flex-start;gap:11px;min-height:95px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer; }
+    .module-choice:hover { border-color:#b5cbbb;background:#fbfdfb; }
+    .module-choice input { flex:0 0 auto;width:16px;height:16px;margin:2px 0 0;accent-color:var(--green); }
+    .module-choice strong { display:block;font-size:11px;margin-bottom:5px; }
+    .module-choice span { display:block;color:var(--muted);font-size:9px;line-height:1.55; }
+    .choice-icon { display:inline!important;color:var(--green)!important;font-size:16px!important;margin-bottom:6px; }
+    .intro-footer { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+    .intro-footer .fine-print { max-width:430px;margin:0; }
+    .intro-error { min-height:16px;color:var(--red);font-size:10px; }
+    .module-nav { display:grid;gap:4px; }
+    .module-nav button { display:flex;align-items:center;gap:12px;border:0;padding:11px 12px;border-radius:9px;color:#68746d;background:transparent;text-align:left;font-weight:600; }
+    .module-nav button:hover { background:#f7f8f6;color:var(--ink); }
+    .module-nav button.active { color:var(--green-dark);background:var(--green-soft); }
+    .section-divider { height:1px;background:var(--line);margin:18px 8px; }
+    .demo-banner { display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #e7ddbf;border-radius:9px;background:#fffbf0;color:#6f6247;font-size:10px;line-height:1.55;margin:0 0 20px; }
+    .demo-banner strong { color:#5a4c2f; }
+    .procurement-filters { display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:9px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#fff;margin-bottom:15px; }
+    .procurement-filters label { display:block;color:var(--muted);font-size:9px;font-weight:700;margin-bottom:5px; }
+    .procurement-filters select { width:100%;min-height:34px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);padding:6px 8px;font-size:10px; }
+    .procurement-filters .btn { min-height:34px;align-self:end;font-size:10px; }
+    .sleb-tools { display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 13px; }
+    .sleb-quick { min-height:34px;border:1px solid #9bbda5;border-radius:8px;padding:0 11px;color:var(--green-dark);background:var(--green-soft);font-size:10px;font-weight:750; }
+    .sleb-quick.active { color:#fff;background:var(--green-dark);border-color:var(--green-dark); }
+    .sleb-tools-note { color:var(--muted);font-size:9px;line-height:1.5; }
+    .preference-tag { display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:99px;color:#23633f;background:#e8f4eb;font-size:9px;font-weight:750; }
+    .competition-tag { display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:99px;color:#58665c;background:#f1f3ef;font-size:9px;font-weight:700; }
+    .sleb-guide { padding:15px;border:1px solid #dce9de;border-radius:10px;background:#f5faf6;margin-top:14px; }
+    .sleb-guide h3 { margin:0 0 8px;font-size:11px; }
+    .sleb-guide p { color:#637067;font-size:9px;line-height:1.6;margin:0 0 9px; }
+    .sleb-guide ol { padding-left:17px;margin:0;color:#526158;font-size:9px;line-height:1.75; }
+    .sleb-guide a { color:var(--green);font-weight:700; }
+    .stats-strip { display:flex;flex-wrap:wrap;gap:8px;margin:0 0 17px; }
+    .stats-strip span { padding:6px 9px;border:1px solid var(--line);border-radius:99px;background:#fff;color:#68746d;font-size:9px; }
+    .contract-tag { display:inline-block;padding:4px 7px;border-radius:99px;background:#f1f2ed;color:#606d63;font-size:9px;font-weight:700; }
+    .review-badge { display:inline-flex;align-items:center;gap:5px;color:#67736a;font-size:9px; }
+    .review-badge::before { content:"";width:6px;height:6px;border-radius:50%;background:#74a886; }
+    .module-grid { display:grid;grid-template-columns:minmax(0,1.5fr) minmax(275px,.8fr);gap:16px;align-items:start; }
+    .module-card { border:1px solid var(--line);border-radius:11px;background:#fff;padding:18px; }
+    .module-card h2 { margin:0;font-size:15px;letter-spacing:-.2px; }
+    .module-card > p { color:var(--muted);font-size:10px;line-height:1.55;margin:7px 0 15px; }
+    .person-head { display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line); }
+    .person-avatar { display:grid;place-items:center;width:43px;height:43px;border-radius:50%;background:#e6eee8;color:#345b43;font-size:14px;font-weight:800; }
+    .person-head h2 { margin:0 0 4px;font-size:14px; }
+    .person-head p { margin:0;color:var(--muted);font-size:9px; }
+    .privacy-pill { margin-left:auto;padding:5px 8px;border-radius:99px;background:#edf3ed;color:#42664c;font-size:9px;font-weight:700; }
+    .source-chips { display:flex;gap:6px;flex-wrap:wrap;margin:13px 0; }
+    .source-chip { border:1px solid var(--line);border-radius:99px;padding:5px 8px;background:#fff;color:#68746d;font-size:9px; }
+    .source-chip.active { border-color:#9bbda5;background:var(--green-soft);color:var(--green-dark); }
+    .timeline { position:relative;margin:14px 0 2px;padding-left:20px; }
+    .timeline::before { content:"";position:absolute;top:5px;bottom:9px;left:5px;width:1px;background:#dfe6df; }
+    .timeline-item { position:relative;padding:0 0 17px 10px; }
+    .timeline-item::before { content:"";position:absolute;left:-19px;top:4px;width:9px;height:9px;border:2px solid #fff;border-radius:50%;background:#649474;box-shadow:0 0 0 1px #a9c2ad; }
+    .timeline-date { color:var(--muted);font-size:9px; }
+    .timeline-title { font-size:10px;font-weight:750;margin:4px 0 3px; }
+    .timeline-note { color:#758078;font-size:9px;line-height:1.5; }
+    .timeline-source { display:inline-block;margin-top:5px;padding:3px 6px;border-radius:5px;background:#f1f3ef;color:#68746d;font-size:8px; }
+    .access-list { display:grid;gap:11px;margin:13px 0; }
+    .access-row { display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px; }
+    .access-row span { color:#657168; }
+    .toggle { appearance:none;width:29px;height:17px;border-radius:99px;background:#d4d9d4;position:relative;cursor:pointer;transition:.15s; }
+    .toggle::after { content:"";position:absolute;width:13px;height:13px;top:2px;left:2px;border-radius:50%;background:#fff;transition:.15s; }
+    .toggle:checked { background:#4f8963; }
+    .toggle:checked::after { transform:translateX(12px); }
+    .audit-event { border-top:1px solid var(--line);padding-top:11px;color:#768078;font-size:9px;line-height:1.5; }
+    .pipeline-summary { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:17px; }
+    .pipeline-stat { padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff; }
+    .pipeline-stat span { color:var(--muted);font-size:9px; }
+    .pipeline-stat strong { display:block;font-size:19px;margin-top:5px; }
+    .funding-pressure { display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 15px;border:1px solid #efdfbb;border-radius:10px;background:#fffbf2;margin-bottom:15px; }
+    .funding-pressure strong { display:block;font-size:11px; }
+    .funding-pressure p { color:#76694e;font-size:9px;line-height:1.45;margin:4px 0 0; }
+    .pressure-number { white-space:nowrap;color:#8c641f;font-size:17px;font-weight:800; }
+    .project-list { display:grid;gap:9px; }
+    .project { padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff; }
+    .project-head { display:flex;justify-content:space-between;align-items:flex-start;gap:12px; }
+    .project-head h3 { margin:0;font-size:11px;line-height:1.45; }
+    .project-head p { margin:4px 0 0;color:var(--muted);font-size:9px; }
+    .project-score { flex:0 0 auto;min-width:43px;text-align:center;color:var(--green-dark);font-weight:800;font-size:16px; }
+    .project-score small { display:block;color:var(--muted);font-size:8px;font-weight:600; }
+    .score-track { height:4px;border-radius:99px;background:#edf0ec;margin:11px 0;overflow:hidden; }
+    .score-track span { display:block;height:100%;border-radius:99px;background:#6b9a79; }
+    .project-foot { display:flex;justify-content:space-between;align-items:center;gap:8px; }
+    .project-foot span { color:#6f7b71;font-size:9px; }
+    .score-breakdown { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px;padding-top:10px;border-top:1px solid #eff1ee; }
+    .score-factor { color:#738077;font-size:8px;line-height:1.45; }
+    .score-factor strong { color:#35453b;font-size:9px; }
+    .allocation-grid { display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:15px;align-items:start; }
+    .allocation-row { padding:14px 0;border-bottom:1px solid #eff1ee; }
+    .allocation-row:last-child { border:0; }
+    .allocation-label { display:flex;justify-content:space-between;gap:12px;font-size:10px;font-weight:750; }
+    .allocation-label span:last-child { color:var(--green-dark); }
+    .allocation-row p { color:var(--muted);font-size:9px;line-height:1.45;margin:4px 0 8px; }
+    .allocation-row input[type="range"] { width:100%;accent-color:var(--green); }
+    .allocation-row input[type="number"] { width:100px;border:1px solid var(--line);border-radius:6px;padding:6px;font-size:10px; }
+    .allocation-bottom { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px; }
+    .allocation-total { font-size:10px;color:var(--muted); }
+    .allocation-total strong { color:var(--ink);font-size:14px; }
+    .outcome-number { font-size:25px;font-weight:800;letter-spacing:-.7px;margin:10px 0 2px; }
+    .outcome-label { color:var(--muted);font-size:9px; }
+    .mix-bar { display:flex;height:12px;overflow:hidden;border-radius:99px;margin:14px 0 10px;background:#edf0ec; }
+    .mix-bar span:nth-child(1) { background:#386b4c; }
+    .mix-bar span:nth-child(2) { background:#82a88b; }
+    .mix-bar span:nth-child(3) { background:#c6d7c1; }
+    .mix-legend { display:grid;gap:8px; }
+    .mix-legend div { display:flex;justify-content:space-between;gap:8px;color:#68746d;font-size:9px; }
+    .mix-legend strong { color:var(--ink); }
+    .dot-key { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#386b4c; }
+    .dot-key.mid { background:#82a88b; }
+    .dot-key.upper { background:#c6d7c1; }
+    @media (max-width: 780px) {
+      .module-grid, .allocation-grid { grid-template-columns:1fr; }
+      .procurement-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .pipeline-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .module-nav button { justify-content:center;padding:12px 0; }
+    }
+    @media (max-width: 520px) {
+      .procurement-filters { grid-template-columns:1fr 1fr;padding:10px;gap:7px; }
+      .procurement-filters .btn { grid-column:1 / -1; }
+      .module-choices { grid-template-columns:1fr; }
+      .service-intro { padding:19px 16px;margin:12px auto; }
+      .intro-footer { align-items:stretch;flex-direction:column; }
+      .intro-footer .btn { width:100%; }
+      .pipeline-summary { gap:7px; }
+      .pipeline-stat { padding:10px; }
+      .funding-pressure { align-items:flex-start; }
+      .person-head { align-items:flex-start; }
+      .privacy-pill { white-space:nowrap; }
+    }
+    @media (max-width: 1050px) {
+      .sidebar { width: 215px; }
+      .workspace { margin-left: 215px; }
+      main { padding: 30px 26px 48px; }
+      .topbar { padding: 0 26px; }
+      .work-grid { grid-template-columns: minmax(0,1.25fr) minmax(260px,.85fr); gap: 12px; }
+      .metrics { gap: 9px; }
+      .metric { padding: 13px; }
+    }
+    @media (max-width: 780px) {
+      .sidebar { width: 66px; padding: 19px 8px; }
+      .brand { justify-content: center; padding: 0 0 30px; }
+      .brand-copy, .nav-label, .nav-text, .nav-count, .help-box, .profile-mini > div:last-child { display: none; }
+      .nav button { justify-content: center; padding: 12px 0; }
+      .nav-icon { font-size: 18px; }
+      .profile-mini { justify-content: center; padding: 16px 0 0; }
+      .workspace { margin-left: 66px; }
+      .topbar { padding: 0 20px; }
+      main { padding: 26px 20px 40px; }
+      .work-grid, .bid-layout { grid-template-columns: 1fr; }
+      .preview-card { position: static; }
+      .bid-side { order: -1; }
+      .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 520px) {
+      .sidebar { display: none; }
+      .workspace { margin: 0; padding-bottom: 67px; }
+      .topbar { height: 56px; padding: 0 16px; }
+      .county-pill { font-size: 9px; }
+      .top-actions { gap: 12px; }
+      main { padding: 23px 15px 30px; }
+      .welcome-row { display: block; margin-bottom: 21px; }
+      .welcome-row .btn { margin-top: 15px; width: 100%; }
+      .investment-actions { display:flex;gap:8px;margin-top:15px; }
+      .investment-actions .btn { width:auto;margin-top:0;flex:1;padding:0 8px;font-size:10px; }
+      h1 { font-size: 28px; }
+      .metrics { gap: 8px; margin-bottom: 23px; }
+      .metric { padding: 12px; }
+      .metric strong { font-size: 22px; }
+      .section-heading { align-items: flex-end; }
+      .section-heading h2 { font-size: 15px; }
+      .op-card { padding: 14px; }
+      .op-meta { gap: 10px; }
+      .bid-hero { padding: 20px 17px 17px; }
+      .bid-hero h1 { font-size: 22px; }
+      .bid-tabs { gap: 18px; padding: 0 17px; }
+      .bid-panel { padding: 19px 17px 22px; }
+      .profile-grid { grid-template-columns: 1fr; gap: 12px; }
+      .field.full { grid-column: auto; }
+      .profile-card { padding: 18px; }
+      .quote-table .line-desc { min-width: 90px; }
+      .quote-table input { padding: 7px 5px; }
+      .quote-table th, .quote-table td { padding-left: 3px; padding-right: 3px; }
+      .mobile-nav { display: grid; position: fixed; bottom: 0; left: 0; right: 0; z-index: 6; grid-template-columns: repeat(5,1fr); padding: 7px 8px max(7px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(255,255,255,.97); }
+      .mobile-nav button { display: grid; place-items: center; gap: 3px; border: 0; color: #89938b; background: transparent; font-size: 9px; }
+      .mobile-nav button.active { color: var(--green); font-weight: 750; }
+      .mobile-nav .nav-icon { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div class="brand-copy"><div class="brand-name">CivicBridge</div><div class="brand-sub">Alameda County · Demo</div></div>
+      </div>
+      <div class="nav-label" id="systems-label" hidden>County systems</div>
+      <nav class="module-nav" id="module-nav" aria-label="County systems" hidden>
+        <button class="active" data-view="procurement"><span class="nav-icon">⌕</span><span class="nav-text">Procurement</span></button>
+        <button data-view="person"><span class="nav-icon">◎</span><span class="nav-text">Whole person</span></button>
+        <button data-view="pipeline"><span class="nav-icon">▤</span><span class="nav-text">Housing pipeline</span></button>
+        <button data-view="investment"><span class="nav-icon">◉</span><span class="nav-text">Housing investment</span></button>
+      </nav>
+      <div class="section-divider" id="procurement-divider" hidden></div>
+      <div class="nav-label" id="procurement-label" hidden>Procurement</div>
+      <nav class="nav" id="procurement-nav" hidden>
+        <button data-view="saved"><span class="nav-icon">☆</span><span class="nav-text">Saved opportunities</span></button>
+        <button data-view="vendor"><span class="nav-icon">▧</span><span class="nav-text">Vendor profile</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="help-box"><strong>New to county bids?</strong><p>Get a clear walkthrough of what to do next.</p><a class="text-link" href="/">Open BidPath, the plain-English guide →</a></div>
+        <div class="profile-mini"><div class="avatar">CP</div><div><strong>County staff demo</strong><span>Alameda workspace</span></div></div>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="crumb" id="crumb">Workspace&nbsp; / &nbsp;<strong>Choose your tabs</strong></div>
+        <div class="top-actions"><span class="county-pill">Alameda County · Demo data</span><button class="btn btn-small" id="change-tabs">Choose tabs</button><button class="icon-button" aria-label="Notifications" onclick="showToast('You’re all caught up.')">♧<i class="notify-dot"></i></button></div>
+      </header>
+      <main>
+        <section class="view active" id="view-welcome">
+          <div class="service-intro">
+            <div class="eyebrow">Welcome to CivicBridge · Alameda County demo</div>
+            <h1>A clearer view of County services and opportunities</h1>
+            <p class="subhead">Choose the tabs you want in your workspace. You can change this any time. This interactive demonstration uses fictional sample information—not live County systems.</p>
+            <div class="module-choices" role="group" aria-label="Choose workspace tabs">
+              <label class="module-choice"><input type="checkbox" name="workspace-tab" value="procurement" checked><span><strong><span class="choice-icon">⌕</span> County procurement</strong><span>Explore sample contracts across goods, construction, housing, and services. Filter by category, area, supplier type, and stated SLEB preference.</span></span></label>
+              <label class="module-choice"><input type="checkbox" name="workspace-tab" value="person"><span><strong><span class="choice-icon">◎</span> Whole-person view</strong><span>See a synthetic, source-labelled timeline across housing, health referrals, and social services, with example access controls.</span></span></label>
+              <label class="module-choice"><input type="checkbox" name="workspace-tab" value="pipeline"><span><strong><span class="choice-icon">▤</span> Housing project pipeline</strong><span>Compare sample proposals using an explainable rubric; inspect evidence, shortlist projects, and export a review packet.</span></span></label>
+              <label class="module-choice"><input type="checkbox" name="workspace-tab" value="investment"><span><strong><span class="choice-icon">◉</span> Housing investment</strong><span>Adjust a sample funding mix and compare estimated affordable homes and preservation outcomes across income bands.</span></span></label>
+            </div>
+            <div class="intro-error" id="intro-error" role="status" aria-live="polite"></div>
+            <div class="stats-strip"><span>Single-file HTML prototype</span><span>Browser-only demo interactions</span><span>No live feeds, accounts, or backend</span></div>
+            <div class="intro-footer"><p class="fine-print">Your choices only control which tabs appear. They do not grant access to real records or services. Procurement also includes saved opportunities and a vendor profile.</p><button class="btn btn-primary" id="enter-workspace">Continue to workspace →</button></div>
+          </div>
+        </section>
+        <section class="view" id="view-procurement">
+          <div class="welcome-row">
+            <div><div class="eyebrow">County procurement · Alameda County, California</div><h1>County contracts, easier to find</h1><p class="subhead">Find public work across Alameda County, including bids that state a local SLEB preference.</p></div>
+            <div class="investment-actions"><a class="btn btn-dark" href="/dashboard">Open BidPath matching →</a><button class="btn btn-primary" onclick="showToast('Sample countywide opportunity feed refreshed.')"><span>↻</span> Refresh opportunities</button></div>
+          </div>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Illustrative prototype data.</strong> Listings, preference labels, certification details and rules below are samples, not active solicitations or a statement of current Alameda County policy. Check the official notice. A stated preference may affect evaluation under that solicitation; it does not guarantee an award or necessarily exclude out-of-area bidders.</div></div>
+          <div class="metrics">
+            <div class="metric"><div class="metric-top"><span>Open opportunities</span><span>↗</span></div><strong>126</strong><small>Across County departments</small></div>
+            <div class="metric"><div class="metric-top"><span>Contract categories</span><span>▦</span></div><strong>18</strong><small>Goods, works, services & more</small></div>
+            <div class="metric"><div class="metric-top"><span>Supplier profiles</span><span>◉</span></div><strong>5</strong><small>Local to national · nonprofit & private</small></div>
+            <div class="metric"><div class="metric-top"><span>Upcoming solicitations</span><span>◷</span></div><strong>$42M</strong><small>Illustrative forecast value</small></div>
+          </div>
+          <div class="work-grid">
+            <div>
+              <div class="section-heading"><h2>Find a County contract</h2><button class="text-link" onclick="setView('saved')">☆ Saved opportunities</button></div>
+              <div class="sleb-tools"><button class="sleb-quick" id="sleb-quick-filter" aria-pressed="false">✓ Show bids with a stated SLEB preference</button><span class="sleb-tools-note">Sample match only. “Check solicitation” bids are not confirmed preference opportunities.</span></div>
+              <div class="procurement-filters" aria-label="Filter countywide opportunities">
+                <div><label for="proc-category">Contract category</label><select id="proc-category"><option value="all">All categories</option><option value="construction">Construction & public works</option><option value="housing">Housing & real estate</option><option value="human-services">Human services</option><option value="technology">Technology & data</option><option value="goods">Goods & supplies</option><option value="professional">Professional services</option><option value="facilities">Facilities & maintenance</option><option value="infrastructure">Infrastructure & utilities</option><option value="concessions">Concessions & partnerships</option></select></div>
+                <div><label for="proc-supplier">Supplier / partner size</label><select id="proc-supplier"><option value="all">Any organization</option><option value="local">Local / small business</option><option value="regional">Regional / mid-size</option><option value="corporate">National / corporate</option><option value="nonprofit">Nonprofit partner</option><option value="private">Private-sector partner</option></select></div>
+                <div><label for="proc-area">County area</label><select id="proc-area"><option value="all">All County areas</option><option value="north">North</option><option value="central">Central</option><option value="south">South</option><option value="countywide">Countywide</option></select></div>
+                <button class="btn" id="clear-proc-filters">Clear filters</button>
+              </div>
+              <div class="stats-strip"><span>Open competition by default</span><span>Filter by contract type, size, department or County area</span><span>Notice + award history</span></div>
+              <div class="opportunity-list" id="opportunity-list">
+                <article class="op-card selected" data-id="lake-chabot" data-category="construction" data-supplier="all" data-area="countywide" data-sleb="none">
+                  <div class="op-top"><div><div class="op-title">Guardrail replacement · Shoreline access road</div><div class="op-id">PW-26-184 · Public Works · Illustrative RFQ</div></div><span class="contract-tag">Construction</span></div>
+                  <div class="op-meta"><span>⌖ Countywide</span><span>◷ Closes Oct 13</span><span>◉ $35k–$50k</span></div>
+                  <div class="op-footer"><span class="review-badge">Open competition · any qualified vendor</span><button class="text-link" onclick="openBidCard()">View opportunity →</button></div>
+                </article>
+                <article class="op-card" data-id="shelter-services" data-category="human-services" data-supplier="nonprofit" data-area="north" data-sleb="check">
+                  <div class="op-top"><div><div class="op-title">Bridge housing and mobile outreach services</div><div class="op-id">HSD-26-042 · Housing & Human Services · Sample RFP</div></div><span class="competition-tag">Check SLEB terms</span></div>
+                  <div class="op-meta"><span>⌖ North district</span><span>◷ Closes Nov 6</span><span>◉ $1.2M–$1.8M</span></div>
+                  <div class="op-footer"><span class="review-badge">Community organizations & providers</span><span class="match">Service contract</span></div>
+                </article>
+                <article class="op-card" data-id="housing-partner" data-category="housing" data-supplier="corporate" data-area="central" data-sleb="none">
+                  <div class="op-top"><div><div class="op-title">Affordable housing development partner · Central Avenue</div><div class="op-id">HCD-26-011 · Housing & Community Development · Sample RFP</div></div><span class="contract-tag">Housing / partnership</span></div>
+                  <div class="op-meta"><span>⌖ Central district</span><span>◷ Closes Dec 2</span><span>◉ $8M–$14M project</span></div>
+                  <div class="op-footer"><span class="review-badge">Developers & capital partners</span><span class="match">Development RFP</span></div>
+                </article>
+                <article class="op-card" data-id="data-platform" data-category="technology" data-supplier="corporate" data-area="countywide" data-sleb="none">
+                  <div class="op-top"><div><div class="op-title">County data platform modernization</div><div class="op-id">IT-26-008 · Innovation & Technology · Sample RFP</div></div><span class="contract-tag">Technology</span></div>
+                  <div class="op-meta"><span>⌖ Countywide</span><span>◷ Closes Nov 18</span><span>◉ $500k–$900k</span></div>
+                  <div class="op-footer"><span class="review-badge">Open to qualified providers</span><span class="match">Professional services</span></div>
+                </article>
+                <article class="op-card" data-id="food-supply" data-category="goods" data-supplier="local regional corporate" data-area="south" data-sleb="preference">
+                  <div class="op-top"><div><div class="op-title">Fresh food and pantry supplies · community sites</div><div class="op-id">OPS-26-117 · Community Operations · Sample IFB</div></div><span class="preference-tag">SLEB preference stated</span></div>
+                  <div class="op-meta"><span>⌖ South district</span><span>◷ Closes Oct 28</span><span>◉ $90k–$140k</span></div>
+                  <div class="op-footer"><span class="review-badge">Eligible local firms may receive preference</span><button class="text-link" onclick="event.stopPropagation();openSlebNotice()">Review sample preference →</button></div>
+                </article>
+                <article class="op-card" data-id="energy-audit" data-category="professional" data-supplier="regional" data-area="central" data-sleb="none">
+                  <div class="op-top"><div><div class="op-title">Municipal building energy audits and retrofit design</div><div class="op-id">SUS-26-033 · Sustainability Office · Sample RFQ</div></div><span class="contract-tag">Professional services</span></div>
+                  <div class="op-meta"><span>⌖ Central district</span><span>◷ Closes Nov 12</span><span>◉ $250k–$400k</span></div>
+                  <div class="op-footer"><span class="review-badge">Consultants & engineering firms</span><span class="match">Qualifications-based</span></div>
+                </article>
+                <article class="op-card" data-id="facilities" data-category="facilities" data-supplier="all" data-area="south" data-sleb="check">
+                  <div class="op-top"><div><div class="op-title">Library and community center custodial services</div><div class="op-id">FAC-26-066 · Facilities · Sample service agreement</div></div><span class="competition-tag">Check SLEB terms</span></div>
+                  <div class="op-meta"><span>⌖ South district</span><span>◷ Closes Dec 9</span><span>◉ $600k–$850k</span></div>
+                  <div class="op-footer"><span class="review-badge">Open competition · any qualified vendor</span><span class="match">Multi-year services</span></div>
+                </article>
+                <article class="op-card" data-id="community-concession" data-category="concessions" data-supplier="local nonprofit private" data-area="central" data-sleb="none">
+                  <div class="op-top"><div><div class="op-title">Community market operator · waterfront plaza</div><div class="op-id">ECO-26-021 · Economic Development · Sample concession</div></div><span class="contract-tag">Concession / partnership</span></div>
+                  <div class="op-meta"><span>⌖ Central district</span><span>◷ Closes Jan 8</span><span>◉ Revenue-share model</span></div>
+                  <div class="op-footer"><span class="review-badge">Nonprofit, local business or private operator</span><span class="match">Partnership opportunity</span></div>
+                </article>
+                <div class="empty-message" id="no-matches">No sample solicitations match those filters. Try a broader category or supplier type.</div>
+              </div>
+            </div>
+            <aside class="preview-card" aria-label="Selected opportunity summary">
+              <div class="preview-head"><div class="eyebrow">Sample solicitation · general competition</div><h3>Guardrail replacement · Shoreline access road</h3><p>Public Works · PW-26-184</p></div>
+              <div class="preview-body">
+                <div class="preview-value"><span>Estimated contract</span><strong>$35k–$50k</strong></div>
+                <div class="preview-facts">
+                  <div class="fact"><span class="fact-icon">⌖</span><div><div class="fact-label">Service area</div><strong>Countywide · central shoreline corridor</strong></div></div>
+                  <div class="fact"><span class="fact-icon">◷</span><div><div class="fact-label">Bid deadline</div><strong>October 13, 2026 · 2:00 PM</strong></div></div>
+                  <div class="fact"><span class="fact-icon">▤</span><div><div class="fact-label">Contract class</div><strong>County public works · small-to-large vendors</strong></div></div>
+                </div>
+                <div class="preview-notice">This sample shows general competition, not a stated SLEB preference. Confirm eligibility and any preference in the official solicitation.</div>
+                <button class="btn btn-primary" onclick="openBidCard()">Review opportunity <span>→</span></button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-saved">
+          <div class="welcome-row"><div><div class="eyebrow">County procurement · watchlist</div><h1>Saved opportunities</h1><p class="subhead">A sample watchlist spanning County public works, services and goods contracts.</p></div><button class="btn" onclick="setView('procurement')">← Browse County opportunities</button></div>
+          <div class="work-grid">
+            <div class="opportunity-list">
+              <article class="op-card selected"><div class="op-top"><div><div class="op-title">Guardrail replacement · Shoreline access road</div><div class="op-id">PW-26-184 · Public Works · Illustrative RFQ</div></div><span class="contract-tag">Construction</span></div><div class="op-meta"><span>⌖ Countywide</span><span>◷ Closes Oct 13</span><span>◉ $35k–$50k</span></div><div class="op-footer"><span class="close-soon">Sample deadline</span><button class="text-link" onclick="openBidCard()">Open sample Bid Card →</button></div></article>
+              <article class="op-card"><div class="op-top"><div><div class="op-title">Bridge housing and mobile outreach services</div><div class="op-id">HSD-26-042 · Housing & Human Services · Sample RFP</div></div><span class="contract-tag">Human services</span></div><div class="op-meta"><span>⌖ North district</span><span>◷ Closes Nov 6</span><span>◉ $1.2M–$1.8M</span></div><div class="op-footer"><span>Sample service contract</span><button class="text-link" onclick="showToast('Additional sample Bid Cards are coming soon.')">Preview →</button></div></article>
+              <article class="op-card"><div class="op-top"><div><div class="op-title">Fresh food and pantry supplies · community sites</div><div class="op-id">OPS-26-117 · Community Operations · Sample IFB</div></div><span class="contract-tag">Goods & supplies</span></div><div class="op-meta"><span>⌖ South district</span><span>◷ Closes Oct 28</span><span>◉ $90k–$140k</span></div><div class="op-footer"><span>Sample goods contract</span><button class="text-link" onclick="showToast('Additional sample Bid Cards are coming soon.')">Preview →</button></div></article>
+            </div>
+            <aside class="panel" style="padding:20px"><div class="eyebrow">Your watchlist</div><h2 style="font-size:17px;margin:8px 0">Stay ahead of deadlines</h2><p class="subhead" style="font-size:11px">We'll keep your saved bids easy to find. Reminder alerts can help you keep track of key dates.</p><button class="btn" style="width:100%;margin-top:15px" onclick="showToast('Deadline reminders are coming soon.')">Reminder settings</button></aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-person">
+          <div class="welcome-row"><div><div class="eyebrow">Housing · health · community services</div><h1>Whole-person view</h1><p class="subhead">A permission-aware timeline to help authorized teams coordinate support around a resident.</p></div><span class="county-pill">Synthetic resident · demo</span></div>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>No real person or service records are connected.</strong> This is synthetic demo data only. A real deployment requires legal authority, resident-centered consent where applicable, strict purpose limits, role-based access, security review and auditable sharing. Do not use this mockup to make eligibility, enforcement or care decisions.</div></div>
+          <div class="module-grid">
+            <section class="module-card">
+              <div class="person-head"><div class="person-avatar">R</div><div><h2>Resident demo · R-1042</h2><p>Fictional profile · no name, address or diagnosis</p></div><span class="privacy-pill">Access-scoped</span></div>
+                  <div class="stats-strip" style="margin-top:13px"><span>Assigned team: Housing navigator</span><span>Last reviewed: Oct 2, 2026</span><span>Timeline: 6 sample events</span></div>
+              <div class="section-heading" style="margin-top:18px"><h2>Shared-service timeline</h2><span>Source-labelled · chronological</span></div>
+              <div class="source-chips" role="group" aria-label="Filter timeline by service">
+                <button class="source-chip active" data-timeline="all">All services</button><button class="source-chip" data-timeline="housing">Housing</button><button class="source-chip" data-timeline="health">Health</button><button class="source-chip" data-timeline="social">Social services</button>
+              </div>
+              <div class="timeline" id="person-timeline">
+                <div class="timeline-item" data-source="housing"><div class="timeline-date">October 2, 2026 · 10:15 AM</div><div class="timeline-title">Housing navigation check-in completed</div><div class="timeline-note">Resident reviewed available placement options with assigned navigator. Follow-up requested next week.</div><span class="timeline-source">Housing · Demo case note</span></div>
+                <div class="timeline-item" data-source="health"><div class="timeline-date">September 29, 2026 · 2:30 PM</div><div class="timeline-title">Community clinic connection offered</div><div class="timeline-note">Referral status: appointment information shared. Clinical notes and diagnoses are not displayed in this view.</div><span class="timeline-source">Health · Demo referral status</span></div>
+                <div class="timeline-item" data-source="social"><div class="timeline-date">September 26, 2026 · 11:05 AM</div><div class="timeline-title">Benefits enrollment support</div><div class="timeline-note">Application assistance completed; resident chose a follow-up reminder.</div><span class="timeline-source">Social services · Demo activity</span></div>
+                <div class="timeline-item" data-source="housing"><div class="timeline-date">September 20, 2026 · 9:40 AM</div><div class="timeline-title">Temporary shelter placement offered</div><div class="timeline-note">Offer and resident response recorded by the housing team. Detailed shelter location is intentionally omitted.</div><span class="timeline-source">Housing · Demo placement event</span></div>
+                <div class="timeline-item" data-source="health"><div class="timeline-date">September 18, 2026 · 4:10 PM</div><div class="timeline-title">Outreach team requested a wellness follow-up</div><div class="timeline-note">A care-team follow-up was requested. Sensitive clinical detail is not included.</div><span class="timeline-source">Health · Demo coordination event</span></div>
+                <div class="timeline-item" data-source="social"><div class="timeline-date">September 12, 2026 · 1:20 PM</div><div class="timeline-title">Street outreach connection recorded</div><div class="timeline-note">Resident connected with an outreach worker and identified housing support as a priority.</div><span class="timeline-source">Social services · Demo outreach event</span></div>
+              </div>
+              <div class="empty-message" id="timeline-empty">No sample events for this service filter.</div>
+              <button class="text-link" style="margin-top:12px" onclick="setView('pipeline')">View County housing project pipeline →</button>
+            </section>
+            <aside class="module-card">
+              <div class="eyebrow">Privacy & permissions</div><h2 style="margin-top:7px">Example sharing scopes</h2>
+              <p>Illustrative controls for an authorized team's view. These switches do not grant real access or record legal consent.</p>
+              <div class="access-list">
+                <label class="access-row"><span>Housing navigation events</span><input class="toggle" type="checkbox" checked data-scope="Housing"></label>
+                <label class="access-row"><span>Social-service referrals</span><input class="toggle" type="checkbox" checked data-scope="Social services"></label>
+                <label class="access-row"><span>Health referral status only</span><input class="toggle" type="checkbox" data-scope="Health"></label>
+                <label class="access-row"><span>Clinical notes / diagnoses</span><input class="toggle" type="checkbox" disabled aria-label="Clinical notes hidden"></label>
+              </div>
+              <div class="notice"><span>!</span><div>Minimum necessary: show coordination status, source and next step—not full records. A real system needs a reviewed legal basis, consent workflow, correction process and retention policy.</div></div>
+              <button class="btn btn-primary" style="width:100%" id="permission-button">Request reviewed access</button>
+              <div class="audit-event" id="access-audit">Demo audit log · Last view: County housing navigator · Oct 2, 2026, 10:18 AM. All events shown are synthetic.</div>
+              <p class="fine-print">Connected County housing planning should use de-identified, aggregated service-need measures only—not identifiable case timelines as a project score or funding rule.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-pipeline">
+          <div class="welcome-row"><div><div class="eyebrow">County affordable housing · project-level review</div><h1>County housing project pipeline</h1><p class="subhead">Compare proposals consistently and get from a large application pool to a staff-reviewed shortlist.</p></div><button class="btn" id="export-shortlist">↓ Export review packet</button></div>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Illustrative project data and rubric—not an award recommendation.</strong> Scores apply to proposals, not residents. A defensible process needs published criteria, source evidence, conflict-of-interest checks, accessible review, documented human judgment and an appeal / correction path.</div></div>
+          <div class="pipeline-summary">
+            <div class="pipeline-stat"><span>Projects in this round</span><strong>24</strong></div><div class="pipeline-stat"><span>Requested funding</span><strong>$48.0M</strong></div><div class="pipeline-stat"><span>Available funding</span><strong>$4.8M</strong></div><div class="pipeline-stat"><span>Current shortlist</span><strong id="shortlist-count">0 selected</strong></div>
+          </div>
+          <div class="funding-pressure"><div><strong>Demand is roughly 10× the available pot</strong><p>Rank proposals against a published rubric, inspect evidence and record staff rationale. Rank is a decision aid—not an automatic award.</p></div><div class="pressure-number">10 : 1</div></div>
+          <div class="module-grid">
+            <section class="module-card">
+              <div class="section-heading"><h2>Ranked sample proposals</h2><span>Weighted score · out of 100</span></div>
+              <div class="project-list">
+                <article class="project" data-score="91">
+                  <div class="project-head"><div><h3>Harbor Homes · 48 affordable apartments + 12 supportive homes</h3><p>North district · Request $1.65M · Readiness: permits in hand</p></div><div class="project-score">91<small>Top tier</small></div></div>
+                  <div class="score-track"><span style="width:91%"></span></div>
+                  <div class="project-foot"><span>48 new homes · 60% at ≤60% AMI</span><button class="text-link" data-expand-project aria-expanded="false">View scoring evidence</button><button class="btn btn-small shortlist-button" aria-pressed="false">Add to shortlist</button></div>
+                  <div class="score-breakdown" hidden><div class="score-factor"><strong>Readiness · 27/30</strong><br>Permits issued; executed site control · evidence A</div><div class="score-factor"><strong>Homes / public $ · 21/25</strong><br>48 homes for $1.65M request · estimate</div><div class="score-factor"><strong>Affordability · 19/20</strong><br>36 homes at ≤60% AMI · application</div><div class="score-factor"><strong>Stability · 14/15</strong><br>Existing residents retained; relocation plan · evidence B</div><div class="score-factor"><strong>Geographic equity · 10/10</strong><br>Priority-area gap analysis · County dataset</div><div class="score-factor"><strong>Staff review</strong><br>Evidence freshness and assumptions require confirmation.</div></div>
+                </article>
+                <article class="project" data-score="86">
+                  <div class="project-head"><div><h3>Maple Commons · family housing with childcare space</h3><p>Central district · Request $1.30M · Readiness: final design</p></div><div class="project-score">86<small>High</small></div></div>
+                  <div class="score-track"><span style="width:86%"></span></div>
+                  <div class="project-foot"><span>52 new homes · 70% at ≤80% AMI</span><button class="text-link" data-expand-project aria-expanded="false">View scoring evidence</button><button class="btn btn-small shortlist-button" aria-pressed="false">Add to shortlist</button></div>
+                  <div class="score-breakdown" hidden><div class="score-factor"><strong>Readiness · 24/30</strong><br>Final design; building permit pending · evidence A</div><div class="score-factor"><strong>Homes / public $ · 23/25</strong><br>52 homes for $1.30M request · estimate</div><div class="score-factor"><strong>Affordability · 17/20</strong><br>36 homes at ≤60% AMI · application</div><div class="score-factor"><strong>Stability · 12/15</strong><br>Community-serving childcare included · proposal</div><div class="score-factor"><strong>Geographic equity · 10/10</strong><br>Central district gap analysis · County dataset</div><div class="score-factor"><strong>Staff review</strong><br>Permit schedule and operating plan need verification.</div></div>
+                </article>
+                <article class="project" data-score="79">
+                  <div class="project-head"><div><h3>Juniper Court · acquire and preserve existing apartments</h3><p>South district · Request $980K · Readiness: due diligence</p></div><div class="project-score">79<small>Competitive</small></div></div>
+                  <div class="score-track"><span style="width:79%"></span></div>
+                  <div class="project-foot"><span>34 homes preserved · displacement risk addressed</span><button class="text-link" data-expand-project aria-expanded="false">View scoring evidence</button><button class="btn btn-small shortlist-button" aria-pressed="false">Add to shortlist</button></div>
+                  <div class="score-breakdown" hidden><div class="score-factor"><strong>Readiness · 19/30</strong><br>Purchase option secured; inspections underway · evidence B</div><div class="score-factor"><strong>Homes / public $ · 23/25</strong><br>34 homes preserved for $980K request · estimate</div><div class="score-factor"><strong>Affordability · 15/20</strong><br>24 homes at ≤60% AMI after rehabilitation · plan</div><div class="score-factor"><strong>Stability · 15/15</strong><br>Tenant protections and no-displacement plan · evidence A</div><div class="score-factor"><strong>Geographic equity · 7/10</strong><br>South district allocation gap · County dataset</div><div class="score-factor"><strong>Staff review</strong><br>Confirm inspection scope, purchase timeline and protections.</div></div>
+                </article>
+                <article class="project" data-score="68">
+                  <div class="project-head"><div><h3>Willow Landing · mixed-income homes near transit</h3><p>North district · Request $2.40M · Readiness: schematic design</p></div><div class="project-score">68<small>Developing</small></div></div>
+                  <div class="score-track"><span style="width:68%"></span></div>
+                  <div class="project-foot"><span>96 planned homes · early feasibility</span><button class="text-link" data-expand-project aria-expanded="false">View scoring evidence</button><button class="btn btn-small shortlist-button" aria-pressed="false">Add to shortlist</button></div>
+                  <div class="score-breakdown" hidden><div class="score-factor"><strong>Readiness · 13/30</strong><br>Schematic design; site control documentation incomplete</div><div class="score-factor"><strong>Homes / public $ · 23/25</strong><br>96 planned homes for $2.40M request · estimate</div><div class="score-factor"><strong>Affordability · 14/20</strong><br>60 homes at ≤80% AMI · proposal</div><div class="score-factor"><strong>Stability · 10/15</strong><br>Community benefits plan in development</div><div class="score-factor"><strong>Geographic equity · 8/10</strong><br>Transit access and district needs · County dataset</div><div class="score-factor"><strong>Staff review</strong><br>Resolve site control, cost and affordability assumptions.</div></div>
+                </article>
+              </div>
+            </section>
+            <aside class="module-card"><div class="eyebrow">Published rubric · demo weights</div><h2 style="margin-top:7px">What drives the score?</h2><p>Use consistent project-level criteria, show the underlying evidence, then let staff document exceptions and final judgment.</p><div class="audit-list"><div class="audit-row"><span class="audit-mark">30</span><div><strong>Readiness & deliverability · 30%</strong><span>Site control, approvals, cost and delivery schedule</span></div></div><div class="audit-row"><span class="audit-mark">25</span><div><strong>Homes per public dollar · 25%</strong><span>Transparent subsidy assumptions; compare like with like</span></div></div><div class="audit-row"><span class="audit-mark">20</span><div><strong>Affordability depth · 20%</strong><span>Income bands, term and unit mix in the proposal</span></div></div><div class="audit-row"><span class="audit-mark">15</span><div><strong>Community stability · 15%</strong><span>Preservation, tenant protections and displacement risk</span></div></div><div class="audit-row"><span class="audit-mark">10</span><div><strong>Geographic equity · 10%</strong><span>Published neighborhood needs and existing investment</span></div></div></div><div class="notice"><span>!</span><div>Weights and evidence standards must be approved and published before applications are scored. Record conflicts, reviewer notes, score changes and reasons.</div></div><button class="btn" style="width:100%" onclick="showToast('Rubric change history is part of the production design.')">Rubric & review policy</button></aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-investment">
+          <div class="welcome-row"><div><div class="eyebrow">County affordable housing · portfolio scenario</div><h1>Invest the County housing fund</h1><p class="subhead">Explore how one limited County capital pot could support homes across income levels and preserve community stability.</p></div><div class="investment-actions"><button class="btn" onclick="setView('pipeline')">Project shortlist</button><button class="btn" id="reset-allocation">Reset sample mix</button></div></div>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Planning scenario only—not a funding commitment or forecast.</strong> Per-home subsidy assumptions and unit counts are illustrative. Real decisions need validated costs, funding restrictions, feasibility, operating resources and community input.</div></div>
+          <div class="funding-pressure"><div><strong>One pot · multiple housing needs</strong><p>Balance deeply affordable new homes, mixed-income delivery and preservation / anti-displacement investments.</p></div><div class="pressure-number">$4.8M</div></div>
+          <div class="allocation-grid">
+            <section class="module-card">
+              <div class="section-heading"><h2>Adjust the investment mix</h2><span>Unallocated funds remain visible</span></div>
+              <div class="allocation-row"><div class="allocation-label"><span>Deeply affordable & supportive homes</span><span id="deep-value">$2.0M</span></div><p>Planning assumption: $200,000 County capital per home · homes targeted at ≤30% AMI, with services funded separately.</p><input type="range" min="0" max="4800" step="100" value="2000" data-allocation="deep" aria-label="Deeply affordable investment in thousands"></div>
+              <div class="allocation-row"><div class="allocation-label"><span>Mixed-income family housing</span><span id="mixed-value">$1.6M</span></div><p>Planning assumption: $100,000 County capital per home · estimated homes across ≤60% and 60–80% AMI bands.</p><input type="range" min="0" max="4800" step="100" value="1600" data-allocation="mixed" aria-label="Mixed-income investment in thousands"></div>
+              <div class="allocation-row"><div class="allocation-label"><span>Preservation & anti-displacement</span><span id="preserve-value">$1.2M</span></div><p>Planning assumption: $75,000 County capital per home preserved · tenant protections and rehabilitation costs still require review.</p><input type="range" min="0" max="4800" step="100" value="1200" data-allocation="preserve" aria-label="Preservation investment in thousands"></div>
+              <div class="allocation-bottom"><div class="allocation-total">Allocated <strong id="allocated-total">$4.8M</strong> · unallocated <strong id="unallocated-total">$0</strong></div><span class="req-status status-ok" id="budget-status">Within $4.8M fund</span></div>
+            </section>
+            <aside class="module-card">
+              <div class="eyebrow">Scenario output · estimated</div><h2 style="margin-top:7px">Homes supported by this mix</h2>
+              <div class="outcome-number" id="homes-total">42</div><div class="outcome-label">new or preserved homes · rough estimate</div>
+              <div class="stats-strip" style="margin-top:12px"><span id="new-homes">26 new homes</span><span id="preserved-homes">16 homes preserved</span></div>
+              <div class="mix-bar" aria-label="Housing mix by income band"><span id="bar-deep" style="width:24%"></span><span id="bar-mid" style="width:38%"></span><span id="bar-upper" style="width:38%"></span></div>
+              <div class="mix-legend">
+                <div><span><i class="dot-key"></i>≤30% AMI · new / supportive*</span><strong id="homes-deep">10 homes</strong></div>
+                <div><span><i class="dot-key mid"></i>31–60% AMI · mixed / preserved*</span><strong id="homes-mid">21 homes</strong></div>
+                <div><span><i class="dot-key upper"></i>61–80% AMI · mixed income*</span><strong id="homes-upper">11 homes</strong></div>
+              </div>
+              <div class="notice"><span>!</span><div>*Income-band mix is a simplified planning proxy. Actual household eligibility, occupancy, services and preservation outcomes depend on each funded project's verified terms.</div></div>
+              <button class="btn btn-primary" style="width:100%" id="save-scenario">Save this scenario</button>
+              <p class="fine-print">This comparison does not combine resident-level records with project scoring. Project selection and housing allocation require separate public criteria and human review.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-vendor">
+          <div class="welcome-row"><div><div class="eyebrow">Reusable supplier details</div><h1>Vendor profile</h1><p class="subhead">Represent your organization and find the right County opportunities—local, regional or national.</p></div><div class="investment-actions"><button class="btn" onclick="browseForVendor()">Find matching opportunities</button><button class="btn btn-primary" onclick="findSlebPreferenceBids()">Find SLEB preference bids →</button></div></div>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Sample vendor profile.</strong> Supplier type helps tailor discovery; it does not determine procurement eligibility. Actual contract requirements and open-competition rules always govern.</div></div>
+          <div class="panel profile-card">
+            <h2>Organization profile</h2><p>Describe your organization and capabilities. This demo stores changes only in this browser.</p>
+            <form id="profile-form">
+              <div class="profile-grid">
+                <div class="field"><label for="company-name">Organization name</label><input id="company-name" value="Reyes Fence Co." autocomplete="organization"></div>
+                <div class="field"><label for="supplier-type">Organization type</label><select id="supplier-type"><option value="local">Local small business</option><option value="regional">Regional / mid-size business</option><option value="corporate">National / corporate supplier</option><option value="nonprofit">Nonprofit delivery partner</option><option value="private">Private-sector company / investor</option></select></div>
+                <div class="field"><label for="owner-name">Primary contact</label><input id="owner-name" value="Maria Reyes" autocomplete="name"></div>
+                <div class="field"><label for="capabilities">Contract categories</label><select id="capabilities"><option>Construction & public works</option><option>Housing development</option><option>Human services</option><option>Technology & data</option><option>Goods & supplies</option><option>Professional services</option></select></div>
+                <div class="field"><label for="license">Contractor license number</label><input id="license" value="CA #1048291 · C-13 Fencing"></div>
+                <div class="field"><label for="dir">DIR registration</label><select id="dir"><option value="yes">Active</option><option value="no">Not registered</option><option value="unknown">Not sure</option></select></div>
+                <div class="field"><label for="insurance">General liability coverage</label><select id="insurance"><option value="1000000">$1,000,000 per occurrence</option><option value="500000">$500,000 per occurrence</option><option value="unknown">Not sure</option></select></div>
+                <div class="field"><label for="sleb">SLEB certification status</label><select id="sleb"><option value="yes" selected>Certified · sample profile only</option><option value="no">Not certified</option><option value="pending">Application pending</option><option value="unknown">Not sure</option></select></div>
+                <div class="field"><label for="certifying-agency">Certifying agency</label><select id="certifying-agency"><option>County / local program (verify)</option><option>Alameda County SLEB (verify applicability)</option><option>Other / not sure</option></select></div>
+                <div class="field"><label for="certificate-id">Certificate number</label><input id="certificate-id" value="SAMPLE-ONLY" autocomplete="off"></div>
+                <div class="field"><label for="bonding">Bonding capacity</label><select id="bonding"><option value="yes">Up to $100,000</option><option value="no">Not currently bonded</option><option value="unknown">Not sure</option></select></div>
+                <div class="field"><label for="email">Email</label><input id="email" type="email" value="maria@reyesfence.example" autocomplete="email"></div>
+                <div class="field full"><label for="address">Business address</label><input id="address" value="Alameda, CA · sample only" autocomplete="street-address"></div>
+              </div>
+              <div class="save-row"><span class="save-msg" id="save-msg" aria-live="polite"></span><button class="btn btn-primary" type="submit">Save organization profile</button></div>
+            </form>
+            <div class="sleb-guide"><h3>Get your local certification recognized</h3><p>Use the certifying agency named in the solicitation. This prototype does not verify certification or confirm whether an Alameda County contract accepts another agency's SLEB credential.</p><ol><li>Confirm the program and geographic eligibility rules with the agency.</li><li>Keep certification current; match the legal business name on your bid.</li><li>Attach the certificates and forms the solicitation requests.</li><li>Check whether the notice says preference, set-aside, or open competition.</li></ol><p style="margin:9px 0 0">Ask County procurement staff to confirm current rules before relying on a preference.</p></div>
+            <p class="fine-print">Eligibility results are informational and must be checked against each official solicitation. Profile data stays on this device in the prototype; no accounts or secure server storage exist.</p>
+          </div>
+        </section>
+        <section class="view" id="view-sleb-notice">
+          <button class="back-link" onclick="setView('procurement')">← Back to County contracts</button>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Fictional sample notice.</strong> This example illustrates how a stated SLEB evaluation preference could be presented. It is not a real bid or a statement of Alameda County rules.</div></div>
+          <div class="bid-layout">
+            <div class="bid-main">
+              <div class="bid-hero"><div class="eyebrow">Sample IFB · community operations</div><h1>Fresh food and pantry supplies · community sites</h1><p class="subhead">OPS-26-117 · Fictional County solicitation · South district</p><div class="bid-hero-meta"><span class="hero-chip">Goods & supplies</span><span class="hero-chip">Sample value $90k–$140k</span><span class="hero-chip">Illustrative deadline · Oct 28</span></div></div>
+              <div class="bid-panel">
+                <div class="content-title"><h2>Why this appeared in SLEB preference results</h2><span>Sample notice text</span></div>
+                <div class="requirement"><div><div class="req-name">Local small business preference</div><div class="req-note">This fictional example says an eligible and currently certified local small business preference may be applied during evaluation. The solicitation must define how it works.</div></div><span class="req-status status-ok">Stated in sample</span></div>
+                <div class="requirement"><div><div class="req-name">Certification and proof</div><div class="req-note">Confirm which certifying agency and geographic eligibility the real contracting agency accepts. Include required, current certification evidence with the bid.</div></div><span class="req-status status-warn">Verify official terms</span></div>
+                <div class="requirement"><div><div class="req-name">Other bidders</div><div class="req-note">A preference is not necessarily a set-aside: non-local bidders may still be allowed to compete. The actual solicitation determines the evaluation method and who is eligible.</div></div><span class="req-status status-warn">Not an exclusion</span></div>
+                <div class="notice"><span>!</span><div>Do not assume “local,” “SLEB,” or “preference” has the same definition in every County program. Only rely on current published procurement terms.</div></div>
+                <div class="section-heading" style="margin-top:21px"><h2>Sample contract scope</h2><span>Fictional overview</span></div>
+                <p class="scope-copy">Supply fresh food and shelf-stable pantry goods to multiple community sites on a scheduled basis. The fictional notice requests pricing, delivery capacity, food-safety documentation and proof of any claimed local-business preference.</p>
+                <button class="btn btn-primary" id="save-sleb-search">☆ Save SLEB preference search</button>
+              </div>
+            </div>
+            <aside class="bid-side"><div class="eyebrow">Your sample vendor profile</div><h2 style="font-size:15px;margin:8px 0">SLEB-certified · demo only</h2><p class="quote-note">The profile is not verified. A production service should match a supplier's verified certification, eligible location and contract category against the exact notice language.</p><div class="sleb-guide"><h3>Preference is different from set-aside</h3><p><strong>Preference:</strong> eligible local firms may receive an evaluation advantage as the notice describes; other qualified firms may still bid.</p><p><strong>Set-aside:</strong> only specified supplier groups may bid when the solicitation and rules explicitly reserve the contract.</p></div><button class="btn" style="width:100%;margin-top:12px" onclick="setView('vendor')">Check vendor profile</button><button class="btn" style="width:100%;margin-top:8px" onclick="setView('procurement')">Browse all County contracts</button></aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-bidcard">
+          <button class="back-link" onclick="setView('procurement')">← Back to County procurement</button>
+          <div class="demo-banner"><span>ⓘ</span><div><strong>Entire Bid Card is synthetic.</strong> The RFP, requirements, dates, excerpts and page citations below are invented for interaction design; do not use them to make a bid or compliance decision.</div></div>
+          <div class="bid-layout">
+            <div class="bid-main">
+              <div class="bid-hero"><div class="eyebrow">Synthetic example · County Public Works</div><h1>Guardrail replacement · Shoreline access road</h1><p class="subhead">RFQ #PW-26-184 · Alameda County · Fictional demo solicitation</p><div class="bid-hero-meta"><span class="hero-chip">Construction</span><span class="hero-chip">$35k–$50k estimated</span><span class="hero-chip">Sample deadline · Oct 13</span></div></div>
+              <div class="bid-tabs" role="tablist">
+                <button class="bid-tab active" data-tab="overview">Bid overview</button><button class="bid-tab" data-tab="eligibility">Eligibility</button><button class="bid-tab" data-tab="proposal">Build a quote</button>
+              </div>
+              <div class="bid-panel">
+                <div class="tab-content active" id="tab-overview">
+                  <div class="content-title"><h2>Scope of work</h2><span>Plain-English summary</span></div>
+                  <p class="scope-copy">Remove and replace approximately 420 linear feet of damaged steel guardrail along a County shoreline access road. Work includes furnishing posts, rails, hardware, traffic control, and restoring disturbed areas. The contractor must attend a mandatory site walk before submitting a bid. <button class="citation" data-cite="scope">Sample RFP p. 4</button></p>
+                  <div class="content-title"><h2>Important dates</h2><span>Confirm before you bid</span></div>
+                  <div class="calendar-toolbar"><p>Times use Pacific Time. Use Google Calendar per date, or download the .ics file to import all dates into Apple Calendar, Outlook or another calendar app. Verify the real solicitation first.</p><div class="calendar-actions"><button class="btn btn-small" id="download-calendar">↓ All dates (.ics)</button></div></div>
+                  <div class="date-row">
+                    <div class="date-card" data-event="walk"><span>Mandatory site walk</span><strong>Oct 7, 2026 · 9:00 AM</strong><div style="margin-top:7px"><button class="citation" data-cite="walk">RFP p. 2</button></div><div class="date-card-actions"><button class="calendar-link google-calendar" data-event="walk">Google Calendar ↗</button></div></div>
+                    <div class="date-card" data-event="questions"><span>Questions due</span><strong>Oct 8, 2026 · 5:00 PM</strong><div style="margin-top:7px"><button class="citation" data-cite="questions">RFP p. 2</button></div><div class="date-card-actions"><button class="calendar-link google-calendar" data-event="questions">Google Calendar ↗</button></div></div>
+                    <div class="date-card" data-event="deadline"><span>Bid submission deadline</span><strong>Oct 13, 2026 · 2:00 PM</strong><div style="margin-top:7px"><button class="citation" data-cite="deadline">RFP p. 1</button></div><div class="date-card-actions"><button class="calendar-link google-calendar" data-event="deadline">Google Calendar ↗</button></div></div>
+                    <div class="date-card"><span>Estimated contract</span><strong>$35,000–$50,000</strong><div style="margin-top:7px"><button class="citation" data-cite="value">RFP p. 1</button></div></div>
+                  </div>
+                  <div class="content-title"><h2>Key requirements</h2><span>Tap a source to verify</span></div>
+                  <div class="group-title">Qualifications & labor</div>
+                  <div class="requirement"><div><div class="req-name">C-13 fencing contractor license</div><div class="req-note">Active California contractor license required. <button class="citation" data-cite="license">RFP p. 6</button></div></div><span class="req-status status-ok">Meets profile</span></div>
+                  <div class="requirement"><div><div class="req-name">DIR registration & prevailing wage</div><div class="req-note">DIR registration required; prevailing wage rates apply. <button class="citation" data-cite="dir">RFP p. 7</button></div></div><span class="req-status status-ok">Meets profile</span></div>
+                  <div class="group-title">Insurance & bonds</div>
+                  <div class="requirement"><div><div class="req-name">General liability</div><div class="req-note">$2,000,000 aggregate required; profile shows $1,000,000 per occurrence. <button class="citation" data-cite="insurance">RFP p. 8</button></div></div><span class="req-status status-gap">Coverage gap</span></div>
+                  <div class="requirement"><div><div class="req-name">Performance bond</div><div class="req-note">100% of contract amount upon award. <button class="citation" data-cite="bond">RFP p. 11</button></div></div><span class="req-status status-warn">Verify capacity</span></div>
+                  <div class="group-title">Local participation</div>
+                  <div class="requirement"><div><div class="req-name">Local small-business preference</div><div class="req-note">The fictional notice describes a possible certified local-business preference. Other qualified bids may still compete. <button class="citation" data-cite="sleb">Sample p. 5</button></div></div><span class="req-status status-warn">Verify sample status</span></div>
+                  <div class="citation-detail" id="citation-box" hidden><strong style="font-size:10px" id="citation-title">Source in the RFP</strong><p id="citation-text"></p></div>
+                  <p class="fine-print">This synthetic example is not a real solicitation; the sample excerpts and page citations were written for the prototype. In a real product, fields not in a source should read “Not stated in document.”</p>
+                </div>
+                <div class="tab-content" id="tab-eligibility">
+                  <div class="content-title"><h2>Your eligibility check</h2><span>Based on your business profile</span></div>
+                  <p class="quote-note">A quick comparison of your profile with the requirements listed in this Bid Card. This is informational, not an agency determination.</p>
+                  <div class="requirement"><div><div class="req-name">C-13 fencing contractor license</div><div class="req-note">Your profile lists CA #1048291 · C-13 Fencing.</div></div><span class="req-status status-ok">Meets</span></div>
+                  <div class="requirement"><div><div class="req-name">DIR registration</div><div class="req-note">Your profile shows active registration. Confirm it is current.</div></div><span class="req-status status-ok">Meets</span></div>
+                  <div class="requirement"><div><div class="req-name">Insurance minimum</div><div class="req-note">The RFP states $2M aggregate. Your current profile may not meet this threshold; ask your broker to confirm and provide any required endorsement.</div></div><span class="req-status status-gap">Gap to resolve</span></div>
+                  <div class="requirement"><div><div class="req-name">Performance bond</div><div class="req-note">Bond equal to 100% of contract amount required upon award. Confirm your bonding capacity with your surety.</div></div><span class="req-status status-warn">Verify</span></div>
+                  <div class="requirement"><div><div class="req-name">Local small-business preference</div><div class="req-note">Sample profile claims certification; this prototype does not verify it. Confirm the real agency accepts your certification and follow the solicitation's evaluation terms.</div></div><span class="req-status status-warn">Verify credential</span></div>
+                  <div class="notice"><span>!</span><div>Suggested next step: contact your insurance broker about the $2M aggregate requirement and confirm bonding availability before committing to this bid.</div></div>
+                  <button class="btn" onclick="setTab('overview')">Review cited requirements</button>
+                </div>
+                <div class="tab-content" id="tab-proposal">
+                  <div class="content-title"><h2>Build your quote</h2><span>Draft · edit before use</span></div>
+                  <p class="quote-note">Add your estimated labor and material costs. This demo calculates a quote total in your browser; it does not submit a bid.</p>
+                  <div class="upload-box" id="quote-dropzone">
+                    <div class="upload-header"><div><strong>Upload an existing quote or supporting files</strong><p>PDF, Word, Excel, CSV or text · up to 10 files, 20 MB each. Files stay in this browser session.</p></div><button class="btn btn-small" type="button" id="choose-quote-files">Choose files</button></div>
+                    <input id="quote-files" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" multiple hidden>
+                    <div class="upload-list" id="quote-file-list" aria-live="polite"></div>
+                    <div class="upload-status" id="quote-upload-status" role="status">No files added. Uploaded files are not read, sent to a server, or included in the downloaded draft.</div>
+                  </div>
+                  <table class="quote-table">
+                    <thead><tr><th style="width:43%">Line item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th></th></tr></thead>
+                    <tbody id="quote-lines">
+                      <tr><td><input class="line-desc" value="Steel guardrail materials" aria-label="Line item"></td><td><input type="number" min="0" value="420" class="qty" aria-label="Quantity"></td><td><input value="ft" aria-label="Unit"></td><td><input type="number" min="0" value="48" class="price" aria-label="Unit price"></td><td class="line-total">$20,160</td><td><button class="remove-line" aria-label="Remove line">×</button></td></tr>
+                      <tr><td><input class="line-desc" value="Installation labor" aria-label="Line item"></td><td><input type="number" min="0" value="1" class="qty" aria-label="Quantity"></td><td><input value="lot" aria-label="Unit"></td><td><input type="number" min="0" value="8200" class="price" aria-label="Unit price"></td><td class="line-total">$8,200</td><td><button class="remove-line" aria-label="Remove line">×</button></td></tr>
+                      <tr><td><input class="line-desc" value="Traffic control & restoration" aria-label="Line item"></td><td><input type="number" min="0" value="1" class="qty" aria-label="Quantity"></td><td><input value="lot" aria-label="Unit"></td><td><input type="number" min="0" value="3400" class="price" aria-label="Unit price"></td><td class="line-total">$3,400</td><td><button class="remove-line" aria-label="Remove line">×</button></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="quote-actions"><button class="text-link" id="add-line">+ Add a line item</button><span style="font-size:10px;color:var(--muted)">USD · before taxes</span></div>
+                  <div class="quote-total"><span>Estimated total</span><strong id="quote-total">$31,760</strong></div>
+                  <button class="btn btn-primary full-width" id="download-quote">↓ Download quote draft</button>
+                  <p class="fine-print">Your downloaded draft is not an official County bid form. Review the solicitation for required forms, attachments, and submission instructions.</p>
+                </div>
+              </div>
+            </div>
+            <aside class="bid-side">
+              <div class="audit-top"><h3>Eligibility snapshot</h3><div class="audit-score">72%</div></div>
+              <div class="audit-result"><div class="result-label">Worth a closer look</div><strong>Maybe</strong><p>Resolve the insurance gap and verify your bonding capacity before proceeding.</p></div>
+              <div class="audit-list">
+                <div class="audit-row"><span class="audit-mark" style="color:var(--green)">✓</span><div><strong>Trade license matches</strong><span>C-13 fencing license listed in profile</span></div></div>
+                <div class="audit-row"><span class="audit-mark" style="color:var(--green)">✓</span><div><strong>DIR registration active</strong><span>Confirm current status before bidding</span></div></div>
+                <div class="audit-row"><span class="audit-mark" style="color:var(--red)">!</span><div><strong>Insurance may be below minimum</strong><span>RFP requires $2M aggregate coverage</span></div></div>
+                <div class="audit-row"><span class="audit-mark" style="color:var(--amber)">?</span><div><strong>Bonding capacity to verify</strong><span>100% performance bond upon award</span></div></div>
+              </div>
+              <div class="notice"><span>!</span><div>Guidance only. Eligibility and any local certification are determined by the awarding agency. Verify details in the official solicitation.</div></div>
+              <button class="btn btn-primary" onclick="setTab('eligibility')">View eligibility details</button>
+              <button class="btn" onclick="setTab('proposal')">Build a quote <span>→</span></button>
+              <p class="fine-print">Local / small-business participation programs vary by agency and solicitation. Confirm current criteria with the awarding agency.</p>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+    <nav class="mobile-nav" aria-label="Mobile navigation" id="mobile-nav" hidden>
+      <button class="active" data-view="procurement"><span class="nav-icon">⌕</span><span>Procurement</span></button>
+      <button data-view="saved"><span class="nav-icon">☆</span><span>Saved</span></button>
+      <button data-view="person"><span class="nav-icon">◎</span><span>People</span></button>
+      <button data-view="pipeline"><span class="nav-icon">▤</span><span>Pipeline</span></button>
+      <button data-view="investment"><span class="nav-icon">◉</span><span>Invest</span></button>
+      <button data-view="vendor"><span class="nav-icon">▧</span><span>Vendor</span></button>
+    </nav>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const viewNames = { welcome: "Choose your tabs", procurement: "County Procurement", saved: "Saved opportunities", vendor: "Vendor profile", person: "Whole-person view", pipeline: "Housing pipeline", investment: "Housing investment", bidcard: "Sample Bid Card", "sleb-notice": "SLEB sample notice" };
+    function setView(name) {
+      document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${name}`));
+      document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === name));
+      document.querySelector("#crumb").innerHTML = `Workspace&nbsp; / &nbsp;<strong>${viewNames[name]}</strong>`;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    const workspaceTabInputs = [...document.querySelectorAll('input[name="workspace-tab"]')];
+    const procurementNavItems = ["saved", "vendor"];
+    const procurementSubviewNames = { saved: "Saved opportunities", vendor: "Vendor profile" };
+    function updateWorkspaceNavigation(selectedTabs) {
+      const procurementEnabled = selectedTabs.includes("procurement");
+      document.querySelector("#systems-label").hidden = selectedTabs.length === 0;
+      document.querySelector("#module-nav").hidden = selectedTabs.length === 0;
+      document.querySelector("#procurement-divider").hidden = !procurementEnabled;
+      document.querySelector("#procurement-label").hidden = !procurementEnabled;
+      document.querySelector("#procurement-nav").hidden = !procurementEnabled;
+      document.querySelectorAll("#module-nav [data-view]").forEach(button => {
+        button.hidden = !selectedTabs.includes(button.dataset.view);
+      });
+      document.querySelectorAll("#procurement-nav [data-view]").forEach(button => {
+        button.hidden = !procurementEnabled || !procurementNavItems.includes(button.dataset.view);
+      });
+      const mobileNav = document.querySelector("#mobile-nav");
+      const mobileTabs = selectedTabs.filter(tab => tab !== "procurement");
+      if (procurementEnabled) mobileTabs.unshift("procurement", "saved", "vendor");
+      mobileNav.hidden = mobileTabs.length === 0;
+      mobileNav.style.gridTemplateColumns = `repeat(${Math.max(mobileTabs.length, 1)}, minmax(0, 1fr))`;
+      mobileNav.querySelectorAll("[data-view]").forEach(button => {
+        button.hidden = !mobileTabs.includes(button.dataset.view);
+      });
+    }
+    function selectedWorkspaceTabs() {
+      return workspaceTabInputs.filter(input => input.checked).map(input => input.value);
+    }
+    function beginWorkspace() {
+      const selectedTabs = selectedWorkspaceTabs();
+      const error = document.querySelector("#intro-error");
+      if (!selectedTabs.length) {
+        error.textContent = "Choose at least one tab to continue.";
+        return;
+      }
+      error.textContent = "";
+      updateWorkspaceNavigation(selectedTabs);
+      try {
+        localStorage.setItem("civicbridge-workspace-tabs", JSON.stringify(selectedTabs));
+      } catch {
+        showToast("Workspace tabs selected for this visit, but could not be saved in this browser.");
+      }
+      setView(selectedTabs[0]);
+    }
+    document.querySelector("#enter-workspace").addEventListener("click", beginWorkspace);
+    document.querySelector("#change-tabs").addEventListener("click", () => {
+      document.querySelector("#intro-error").textContent = "";
+      setView("welcome");
+    });
+    workspaceTabInputs.forEach(input => input.addEventListener("change", () => {
+      document.querySelector("#intro-error").textContent = "";
+    }));
+    try {
+      const savedTabs = JSON.parse(localStorage.getItem("civicbridge-workspace-tabs") || "null");
+      if (Array.isArray(savedTabs)) {
+        const validTabs = workspaceTabInputs.map(input => input.value).filter(tab => savedTabs.includes(tab));
+        workspaceTabInputs.forEach(input => { input.checked = validTabs.includes(input.value); });
+        if (validTabs.length) {
+          updateWorkspaceNavigation(validTabs);
+          setView(validTabs[0]);
+        }
+      }
+    } catch {
+      document.querySelector("#intro-error").textContent = "Could not load saved tabs; choose which tabs to show.";
+    }
+    function openBidCard() { setView("bidcard"); setTab("overview"); }
+    function browseForVendor() {
+      setView("procurement");
+      procurementFilters[1].value = document.querySelector("#supplier-type").value;
+      applyProcurementFilters();
+    }
+    function findSlebPreferenceBids() {
+      setView("procurement");
+      procurementFilters.forEach(filter => { filter.value = "all"; });
+      setSlebOnly(true);
+    }
+    function setTab(name) {
+      document.querySelectorAll(".bid-tab").forEach(tab => tab.classList.toggle("active", tab.dataset.tab === name));
+      document.querySelectorAll(".tab-content").forEach(panel => panel.classList.toggle("active", panel.id === `tab-${name}`));
+    }
+    let toastTimer;
+    function showToast(message) {
+      const toast = document.querySelector("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+    const calendarEvents = {
+      walk: {
+        title: "Sample bid · mandatory site walk · PW-26-184",
+        start: "20261007T160000Z",
+        end: "20261007T170000Z",
+        details: "Fictional prototype date. Confirm the actual time and location in the official solicitation before attending."
+      },
+      questions: {
+        title: "Sample bid · questions due · PW-26-184",
+        start: "20261009T000000Z",
+        end: "20261009T003000Z",
+        details: "Fictional prototype deadline: October 8, 2026 at 5:00 PM Pacific. Confirm the official solicitation."
+      },
+      deadline: {
+        title: "Sample bid · submission deadline · PW-26-184",
+        start: "20261013T210000Z",
+        end: "20261013T220000Z",
+        details: "Fictional prototype deadline: October 13, 2026 at 2:00 PM Pacific. Confirm submission method and deadline in the official solicitation."
+      }
+    };
+    function openGoogleCalendar(eventKey) {
+      const event = calendarEvents[eventKey];
+      if (!event) {
+        showToast("That calendar event is unavailable.");
+        return;
+      }
+      const url = new URL("https://calendar.google.com/calendar/render");
+      url.searchParams.set("action", "TEMPLATE");
+      url.searchParams.set("text", event.title);
+      url.searchParams.set("dates", `${event.start}/${event.end}`);
+      url.searchParams.set("details", event.details);
+      url.searchParams.set("location", "Alameda County, California · verify in official notice");
+      window.open(url.toString(), "_blank", "noopener,noreferrer");
+    }
+    function escapeCalendarText(value) {
+      return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+    }
+    function downloadCalendar() {
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+      const items = Object.entries(calendarEvents).map(([key, event]) => [
+        "BEGIN:VEVENT",
+        `UID:PW-26-184-${key}@civicbridge.invalid`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART:${event.start}`,
+        `DTEND:${event.end}`,
+        `SUMMARY:${escapeCalendarText(event.title)}`,
+        `DESCRIPTION:${escapeCalendarText(`${event.details} All dates are synthetic prototype data. Times are Pacific Time.`)}`,
+        "LOCATION:Alameda County\\, California (verify official notice)",
+        "END:VEVENT"
+      ].join("\r\n"));
+      const content = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CivicBridge//Sample Procurement Dates//EN", "CALSCALE:GREGORIAN", ...items, "END:VCALENDAR", ""].join("\r\n");
+      const url = URL.createObjectURL(new Blob([content], { type: "text/calendar;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "alameda-county-bid-sample-dates.ics";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("Calendar file downloaded. Import it into Apple Calendar or another calendar app.");
+    }
+    document.querySelector("#download-calendar").addEventListener("click", downloadCalendar);
+    document.querySelectorAll(".google-calendar").forEach(button => button.addEventListener("click", () => openGoogleCalendar(button.dataset.event)));
+    const quoteFiles = [];
+    const maxQuoteFiles = 10;
+    const maxQuoteFileBytes = 20 * 1024 * 1024;
+    const allowedQuoteExtensions = new Set(["pdf", "doc", "docx", "xls", "xlsx", "csv", "txt"]);
+    function renderQuoteFiles() {
+      const list = document.querySelector("#quote-file-list");
+      list.replaceChildren();
+      quoteFiles.forEach((file, index) => {
+        const row = document.createElement("div");
+        row.className = "upload-item";
+        const name = document.createElement("span");
+        name.className = "upload-item-name";
+        name.textContent = file.name;
+        const size = document.createElement("span");
+        size.className = "upload-item-size";
+        size.textContent = `${(file.size / (1024 * 1024)).toFixed(file.size < 1024 * 1024 ? 2 : 1)} MB`;
+        const remove = document.createElement("button");
+        remove.className = "upload-item-remove";
+        remove.type = "button";
+        remove.textContent = "Remove";
+        remove.setAttribute("aria-label", `Remove ${file.name}`);
+        remove.addEventListener("click", () => {
+          quoteFiles.splice(index, 1);
+          renderQuoteFiles();
+        });
+        row.append(name, size, remove);
+        list.append(row);
+      });
+      if (!quoteFiles.length) {
+        document.querySelector("#quote-upload-status").textContent = "No files added. Uploaded files are not read, sent to a server, or included in the downloaded draft.";
+      } else {
+        document.querySelector("#quote-upload-status").textContent = `${quoteFiles.length} file${quoteFiles.length === 1 ? "" : "s"} selected for this browser session only. Files are not read, sent to a server, or included in the downloaded draft.`;
+      }
+    }
+    function addQuoteFiles(files) {
+      const errors = [];
+      for (const file of files) {
+        const extension = file.name.split(".").pop().toLowerCase();
+        if (!allowedQuoteExtensions.has(extension)) {
+          errors.push(`${file.name}: unsupported file type.`);
+          continue;
+        }
+        if (file.size > maxQuoteFileBytes) {
+          errors.push(`${file.name}: exceeds the 20 MB per-file limit.`);
+          continue;
+        }
+        if (quoteFiles.some(existing => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified)) continue;
+        if (quoteFiles.length >= maxQuoteFiles) {
+          errors.push(`Only ${maxQuoteFiles} files can be added.`);
+          break;
+        }
+        quoteFiles.push(file);
+      }
+      renderQuoteFiles();
+      if (errors.length) document.querySelector("#quote-upload-status").textContent = errors.join(" ");
+    }
+    const quoteInput = document.querySelector("#quote-files");
+    const quoteDropzone = document.querySelector("#quote-dropzone");
+    document.querySelector("#choose-quote-files").addEventListener("click", () => quoteInput.click());
+    quoteInput.addEventListener("change", () => {
+      addQuoteFiles([...quoteInput.files]);
+      quoteInput.value = "";
+    });
+    quoteDropzone.addEventListener("dragover", event => {
+      event.preventDefault();
+      quoteDropzone.classList.add("dragging");
+    });
+    quoteDropzone.addEventListener("dragleave", event => {
+      if (!quoteDropzone.contains(event.relatedTarget)) quoteDropzone.classList.remove("dragging");
+    });
+    quoteDropzone.addEventListener("drop", event => {
+      event.preventDefault();
+      quoteDropzone.classList.remove("dragging");
+      addQuoteFiles([...event.dataTransfer.files]);
+    });
+    document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+    document.querySelectorAll(".bid-tab").forEach(tab => tab.addEventListener("click", () => setTab(tab.dataset.tab)));
+    document.querySelectorAll(".op-card[data-id]").forEach(card => card.addEventListener("click", () => {
+      document.querySelectorAll(".op-card").forEach(item => item.classList.remove("selected"));
+      card.classList.add("selected");
+      if (card.dataset.id !== "lake-chabot") showToast("Sample opportunity details are coming soon.");
+    }));
+    const procurementFilters = ["proc-category", "proc-supplier", "proc-area"].map(id => document.getElementById(id));
+    let slebOnly = false;
+    function setSlebOnly(enabled) {
+      slebOnly = enabled;
+      const button = document.querySelector("#sleb-quick-filter");
+      button.classList.toggle("active", enabled);
+      button.setAttribute("aria-pressed", String(enabled));
+      button.textContent = enabled ? "✓ Showing SLEB preference bids · clear filter" : "✓ Show bids with a stated SLEB preference";
+      applyProcurementFilters();
+    }
+    document.querySelector("#sleb-quick-filter").addEventListener("click", () => setSlebOnly(!slebOnly));
+    function applyProcurementFilters() {
+      let visible = 0;
+      document.querySelectorAll("#opportunity-list .op-card").forEach(card => {
+        const [category, supplier, area] = procurementFilters.map(filter => filter.value);
+        const supplierTypes = card.dataset.supplier.split(" ");
+        const show = (category === "all" || card.dataset.category === category)
+          && (supplier === "all" || card.dataset.supplier === "all" || supplierTypes.includes(supplier))
+          && (area === "all" || card.dataset.area === area || card.dataset.area === "countywide")
+          && (!slebOnly || card.dataset.sleb === "preference");
+        card.style.display = show ? "" : "none";
+        if (show) visible++;
+      });
+      document.querySelector("#no-matches").style.display = visible ? "none" : "block";
+    }
+    procurementFilters.forEach(filter => filter.addEventListener("change", applyProcurementFilters));
+    document.querySelector("#clear-proc-filters").addEventListener("click", () => {
+      procurementFilters.forEach(filter => { filter.value = "all"; });
+      setSlebOnly(false);
+      applyProcurementFilters();
+    });
+    document.querySelector("#save-sleb-search").addEventListener("click", event => {
+      const button = event.currentTarget;
+      const wasSaved = button.dataset.saved === "true";
+      try {
+        if (wasSaved) localStorage.removeItem("civicbridge-sleb-search");
+        else localStorage.setItem("civicbridge-sleb-search", "true");
+        button.dataset.saved = String(!wasSaved);
+        button.textContent = wasSaved ? "☆ Save SLEB preference search" : "✓ SLEB preference search saved";
+        showToast(wasSaved ? "Sample saved search removed." : "Sample search saved on this device. No alerts are sent.");
+      } catch {
+        showToast("Could not save the search in this browser.");
+      }
+    });
+    try {
+      const button = document.querySelector("#save-sleb-search");
+      button.dataset.saved = String(localStorage.getItem("civicbridge-sleb-search") === "true");
+      if (button.dataset.saved === "true") button.textContent = "✓ SLEB preference search saved";
+    } catch {
+      showToast("Saved search could not be loaded from this browser.");
+    }
+    document.querySelectorAll("[data-timeline]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-timeline]").forEach(chip => chip.classList.toggle("active", chip === button));
+      let visible = 0;
+      document.querySelectorAll("#person-timeline .timeline-item").forEach(item => {
+        const show = button.dataset.timeline === "all" || item.dataset.source === button.dataset.timeline;
+        item.style.display = show ? "" : "none";
+        if (show) visible++;
+      });
+      document.querySelector("#timeline-empty").style.display = visible ? "none" : "block";
+    }));
+    document.querySelectorAll(".access-row .toggle:not(:disabled)").forEach(toggle => toggle.addEventListener("change", () => {
+      const enabledScopes = [...document.querySelectorAll(".access-row .toggle:checked")].map(item => item.dataset.scope);
+      const scopeText = enabledScopes.length ? enabledScopes.join(", ") : "no optional service scopes";
+      document.querySelector("#access-audit").textContent = `Demo-only setting changed just now · Example visible scopes: ${scopeText}. This is not a real consent or access log.`;
+    }));
+    document.querySelector("#permission-button").addEventListener("click", () => showToast("A real access request needs authorized staff review; no request was sent."));
+    document.querySelectorAll("[data-expand-project]").forEach(button => button.addEventListener("click", () => {
+      const breakdown = button.closest(".project").querySelector(".score-breakdown");
+      breakdown.hidden = !breakdown.hidden;
+      button.setAttribute("aria-expanded", String(!breakdown.hidden));
+      button.textContent = breakdown.hidden ? "View scoring evidence" : "Hide scoring evidence";
+    }));
+    function updateShortlistCount() {
+      const count = document.querySelectorAll(".shortlist-button.selected").length;
+      document.querySelector("#shortlist-count").textContent = `${count} selected`;
+    }
+    document.querySelectorAll(".shortlist-button").forEach(button => button.addEventListener("click", () => {
+      const selected = button.classList.toggle("selected");
+      button.setAttribute("aria-pressed", String(selected));
+      button.textContent = selected ? "Remove from shortlist" : "Add to shortlist";
+      button.classList.toggle("btn-primary", selected);
+      updateShortlistCount();
+    }));
+    document.querySelector("#export-shortlist").addEventListener("click", () => {
+      const selected = [...document.querySelectorAll(".shortlist-button.selected")].map(button => button.closest(".project"));
+      if (!selected.length) {
+        showToast("Select at least one proposal to export a review packet.");
+        return;
+      }
+      const quote = value => `"${String(value).replaceAll('"', '""')}"`;
+      const rows = [["Proposal", "Weighted score", "Request", "Homes / preservation summary", "Scoring evidence", "Review status"]];
+      selected.forEach(project => {
+        const request = project.querySelector(".project-head p").textContent.match(/Request ([^·]+)/)?.[1].trim() || "Not stated";
+        const evidence = [...project.querySelectorAll(".score-factor")].map(item => item.textContent.trim().replace(/\s+/g, " ")).join(" | ");
+        rows.push([
+          project.querySelector("h3").textContent.trim(),
+          project.dataset.score,
+          request,
+          project.querySelector(".project-foot > span").textContent.trim(),
+          evidence,
+          "Staff verification and documented rationale required"
+        ]);
+      });
+      const csv = rows.map(row => row.map(quote).join(",")).join("\n");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      link.download = "housing-project-review-sample.csv";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast("Sample review packet downloaded.");
+    });
+    const allocationInputs = [...document.querySelectorAll("[data-allocation]")];
+    const money = thousands => `$${(thousands / 1000).toFixed(thousands % 1000 ? 1 : 0)}M`;
+    function updateAllocation() {
+      const values = Object.fromEntries(allocationInputs.map(input => [input.dataset.allocation, Number(input.value)]));
+      const allocated = values.deep + values.mixed + values.preserve;
+      const remaining = 4800 - allocated;
+      document.querySelector("#deep-value").textContent = money(values.deep);
+      document.querySelector("#mixed-value").textContent = money(values.mixed);
+      document.querySelector("#preserve-value").textContent = money(values.preserve);
+      document.querySelector("#allocated-total").textContent = money(allocated);
+      document.querySelector("#unallocated-total").textContent = remaining >= 0 ? money(remaining) : `-${money(Math.abs(remaining))}`;
+      const status = document.querySelector("#budget-status");
+      status.textContent = remaining >= 0 ? "Within $4.8M fund" : `${money(Math.abs(remaining))} over budget`;
+      status.classList.toggle("status-ok", remaining >= 0);
+      status.classList.toggle("status-gap", remaining < 0);
+      const deepHomes = Math.round(values.deep / 200);
+      const mixedHomes = Math.round(values.mixed / 100);
+      const preservedHomes = Math.round(values.preserve / 75);
+      const lowerHomes = Math.round(mixedHomes * .6) + Math.round(preservedHomes * .7);
+      const upperHomes = Math.round(mixedHomes * .4) + Math.round(preservedHomes * .3);
+      const totalHomes = deepHomes + mixedHomes + preservedHomes;
+      document.querySelector("#homes-total").textContent = totalHomes.toLocaleString();
+      document.querySelector("#homes-deep").textContent = `${deepHomes} homes`;
+      document.querySelector("#homes-mid").textContent = `${lowerHomes} homes`;
+      document.querySelector("#homes-upper").textContent = `${upperHomes} homes`;
+      document.querySelector("#new-homes").textContent = `${deepHomes + mixedHomes} new homes`;
+      document.querySelector("#preserved-homes").textContent = `${preservedHomes} homes preserved`;
+      const safeTotal = totalHomes || 1;
+      document.querySelector("#bar-deep").style.width = `${deepHomes / safeTotal * 100}%`;
+      document.querySelector("#bar-mid").style.width = `${lowerHomes / safeTotal * 100}%`;
+      document.querySelector("#bar-upper").style.width = `${upperHomes / safeTotal * 100}%`;
+      document.querySelector("#save-scenario").disabled = remaining < 0;
+      document.querySelector("#save-scenario").title = remaining < 0 ? "Reduce allocations to fit the $4.8M fund." : "";
+    }
+    allocationInputs.forEach(input => input.addEventListener("input", updateAllocation));
+    updateAllocation();
+    document.querySelector("#reset-allocation").addEventListener("click", () => {
+      const sample = { deep: 2000, mixed: 1600, preserve: 1200 };
+      allocationInputs.forEach(input => { input.value = sample[input.dataset.allocation]; });
+      updateAllocation();
+      showToast("Sample investment mix restored.");
+    });
+    document.querySelector("#save-scenario").addEventListener("click", () => {
+      const scenario = Object.fromEntries(allocationInputs.map(input => [input.dataset.allocation, Number(input.value)]));
+      try {
+        localStorage.setItem("civicbridge-housing-scenario", JSON.stringify(scenario));
+        showToast("Investment scenario saved on this device.");
+      } catch {
+        showToast("Could not save the scenario in this browser.");
+      }
+    });
+    try {
+      const savedScenario = JSON.parse(localStorage.getItem("civicbridge-housing-scenario") || "null");
+      if (savedScenario && allocationInputs.every(input => Number.isFinite(savedScenario[input.dataset.allocation]))) {
+        allocationInputs.forEach(input => { input.value = Math.max(0, Math.min(4800, savedScenario[input.dataset.allocation])); });
+        updateAllocation();
+      }
+    } catch {
+      showToast("Saved scenario could not be loaded from this browser.");
+    }
+    const evidence = {
+      scope: ["Synthetic scope excerpt · page 4", "“Remove and replace approximately 420 linear feet of galvanized steel guardrail along the shoreline access road. Contractor shall furnish all labor, materials, equipment, and traffic control necessary to complete the work.”"],
+      walk: ["Mandatory site walk · page 2", "“A mandatory pre-bid site visit will be held on October 7, 2026 at 9:00 AM. Bidders must attend to be eligible for award.”"],
+      questions: ["Questions deadline · page 2", "“Requests for information must be received no later than October 8, 2026 at 5:00 PM.”"],
+      deadline: ["Bid submission deadline · page 1", "“Sealed bids must be received by 2:00 PM on October 13, 2026.”"],
+      value: ["Estimated value · page 1", "“Estimated project value: $35,000 to $50,000.”"],
+      license: ["Contractor license · page 6", "“The prime contractor shall possess a valid California Class C-13 Fencing Contractor license.”"],
+      dir: ["DIR registration and wages · page 7", "“Contractor and all subcontractors must be registered with the Department of Industrial Relations. This project is subject to prevailing wage requirements.”"],
+      insurance: ["Insurance · page 8", "“Commercial general liability insurance: $2,000,000 aggregate and $1,000,000 per occurrence.”"],
+      bond: ["Performance bond · page 11", "“The successful bidder shall furnish a performance bond in an amount equal to 100% of the contract price.”"],
+      sleb: ["Illustrative local preference · page 5", "“A bid preference may be applied to certified local small businesses in accordance with awarding-agency policy.”"]
+    };
+    document.querySelectorAll("[data-cite]").forEach(button => button.addEventListener("click", () => {
+      const [title, text] = evidence[button.dataset.cite];
+      document.querySelector("#citation-title").textContent = title;
+      document.querySelector("#citation-text").textContent = text;
+      document.querySelector("#citation-box").hidden = false;
+      document.querySelector("#citation-box").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }));
+    function recalculate() {
+      let total = 0;
+      document.querySelectorAll("#quote-lines tr").forEach(row => {
+        const qty = Math.max(0, Number(row.querySelector(".qty").value) || 0);
+        const price = Math.max(0, Number(row.querySelector(".price").value) || 0);
+        const lineTotal = qty * price;
+        total += lineTotal;
+        row.querySelector(".line-total").textContent = lineTotal.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+      });
+      document.querySelector("#quote-total").textContent = total.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+    }
+    document.querySelector("#quote-lines").addEventListener("input", event => {
+      if (event.target.matches(".qty, .price")) recalculate();
+    });
+    document.querySelector("#quote-lines").addEventListener("click", event => {
+      const remove = event.target.closest(".remove-line");
+      if (remove) { remove.closest("tr").remove(); recalculate(); }
+    });
+    document.querySelector("#add-line").addEventListener("click", () => {
+      const row = document.createElement("tr");
+      row.innerHTML = '<td><input class="line-desc" value="New line item" aria-label="Line item"></td><td><input type="number" min="0" value="1" class="qty" aria-label="Quantity"></td><td><input value="lot" aria-label="Unit"></td><td><input type="number" min="0" value="0" class="price" aria-label="Unit price"></td><td class="line-total">$0</td><td><button class="remove-line" aria-label="Remove line">×</button></td>';
+      document.querySelector("#quote-lines").append(row);
+      row.querySelector(".line-desc").focus();
+    });
+    document.querySelector("#download-quote").addEventListener("click", () => {
+      const lines = [...document.querySelectorAll("#quote-lines tr")].map(row => {
+        const [description, quantity, unit, price] = row.querySelectorAll("input");
+        return `${description.value}: ${quantity.value} ${unit.value} x $${Number(price.value || 0).toFixed(2)}`;
+      });
+      const total = document.querySelector("#quote-total").textContent;
+      const content = `REYES FENCE CO.\\nDRAFT QUOTE — NOT AN OFFICIAL BID\\n\\nGuardrail replacement · Shoreline access road\\nSample Alameda County RFQ #PW-26-184\\n\\n${lines.join("\\n")}\\n\\nEstimated total: ${total}\\n\\nSynthetic demo data only. Review the actual official solicitation for required forms and submission instructions.`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+      link.download = "reyes-fence-quote-draft.txt";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast("Quote draft downloaded.");
+    });
+    document.querySelector("#profile-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const profile = Object.fromEntries([...event.currentTarget.querySelectorAll("input,select")].map(field => [field.id, field.value]));
+      try {
+        localStorage.setItem("civicbridge-profile", JSON.stringify(profile));
+        document.querySelector("#save-msg").textContent = "Profile saved on this device.";
+      } catch {
+        document.querySelector("#save-msg").textContent = "Could not save in this browser.";
+      }
+    });
+    try {
+      const profile = JSON.parse(localStorage.getItem("civicbridge-profile") || "null");
+      if (profile) Object.entries(profile).forEach(([id, value]) => {
+        const field = document.getElementById(id);
+        if (field) field.value = value;
+      });
+    } catch {
+      document.querySelector("#save-msg").textContent = "Saved profile could not be loaded from this browser.";
+    }
+  </script>
+</body>
+</html>

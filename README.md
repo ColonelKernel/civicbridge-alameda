@@ -80,6 +80,14 @@ The sample set is one source; `countyPortalSource` is a documented stub. A live 
 document through `engine/extract` (the same quote-verified pipeline the paste feature uses) and returns
 `parseSolicitations(records)`. Nothing downstream changes.
 
+**CivicBridge workspace prototype** (`public/civicbridge.html`, served at `/civicbridge.html`, linked from the nav as
+"County workspace"). A single-file HTML prototype of the wider County workspace BidPath belongs to: a countywide
+contract finder with category / supplier / area filters and a stated-SLEB-preference quick filter, a sample bid card
+with tabbed scope, dates, requirements and an eligibility check whose facts cite page-level evidence, a quote builder
+with downloadable draft and calendar export, a whole-person service timeline with example sharing scopes, an
+explainable housing-project rubric with shortlist and review-packet export, and a housing-investment mix tool. All of
+its data is synthetic and labelled as such. It links into BidPath ("Open BidPath matching") and BidPath links back.
+
 **UI.** Cream/green/amber palette, conversational copy, semantic HTML, keyboard-reachable filters, mobile layout.
 The detail page is client-rendered so pasted solicitations (browser-only) behave exactly like built-in ones.
 

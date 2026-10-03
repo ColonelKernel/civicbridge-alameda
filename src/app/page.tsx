@@ -45,6 +45,34 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="card p-6 mb-8 grid gap-5 lg:grid-cols-[1.2fr_1fr] items-center">
+        <div>
+          <p className="text-sm font-medium text-green mb-1">Part of CivicBridge</p>
+          <h2 className="text-2xl font-semibold text-ink">One County workspace, four services</h2>
+          <p className="text-muted mt-2">
+            BidPath is the procurement engine. The CivicBridge prototype shows where it sits: a countywide contract finder with a stated-SLEB
+            filter and a sample bid card with cited evidence and a quote builder, next to a whole-person service timeline, an explainable
+            housing-project rubric, and a housing-investment mix tool. Demo data only.
+          </p>
+          <a href="/civicbridge.html" className="inline-flex items-center gap-2 mt-4 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink/90">
+            Open the County workspace demo →
+          </a>
+        </div>
+        <ul className="grid grid-cols-2 gap-3 text-sm">
+          {[
+            { t: "Procurement", d: "Contract finder, SLEB preference filter, sample bid card, quote draft, calendar export." },
+            { t: "Whole-person view", d: "Source-labelled service timeline with example access scopes." },
+            { t: "Housing pipeline", d: "Published rubric, scoring evidence, shortlist and review packet export." },
+            { t: "Housing investment", d: "Adjust a funding mix and compare estimated homes by income band." },
+          ].map((m) => (
+            <li key={m.t} className="rounded-xl border border-line bg-paper p-3">
+              <div className="font-semibold text-ink">{m.t}</div>
+              <div className="text-muted mt-0.5">{m.d}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-3 pb-8">
         {[
           { t: "Which ones fit, and why", d: "Every match shows its evidence: the license they ask for, the size, the location, the certification you haven't listed. No mystery score." },
